@@ -12,6 +12,7 @@
 		"@types/body-parser": "*",
 		"@types/serve-index": "*",
 		"@types/jsdom": "*",
-		"@types/ws": "*"
+		"@types/ws": "*",
+		"jsdom": "27.0.0"
 	}
 }

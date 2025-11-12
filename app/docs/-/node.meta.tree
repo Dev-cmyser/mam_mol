@@ -15,12 +15,21 @@
 	pack rise git \https://github.com/stan-donarise/mam_rise.git
 	pack yuf git \https://github.com/zerkalica/yuf.git
 	pack apxu git \https://github.com/ApxuTechTop/apxu
+	pack bog git \https://github.com/best-online-games/bog.git
+	pack mws git \https://github.com/reatailret/milkywaystd_mol.git
 \/mol
 	pack icon git \https://github.com/nin-jin/mol_icon.git
 \/mol/view
 	include \/mol/view/tree/test
 \/mol/app/demo/main
 	deploy \/mol/readme.md
+\/rise/demo
+	include \/rise/drag/demo
+	include \/rise/resize/demo
+	include \/rise/resize/ratio/demo
+	include \/rise/toggle/demo
+	include \/rise/range/demo
+	include \/rise/radio/demo
 \/hyoo
 	pack about git \https://github.com/hyoo-ru/about.hyoo.ru.git
 	pack artist git \https://github.com/hyoo-ru/artist.hyoo.ru.git
@@ -146,6 +155,7 @@
 	include \/mol/offline/install
 	include \/mol/app/demo
 	include \/jin/keyboard/demo
+	include \/rise/demo
 	include \/hyoo/crowd/text/demo
 	include \/mol/app/hello/demo
 	include \/mol/app/questions/demo

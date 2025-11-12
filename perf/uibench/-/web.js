@@ -449,7 +449,7 @@ var $;
             if (this[$mol_ambient_ref])
                 return this[$mol_ambient_ref];
             const owner = $mol_owning_get(this);
-            return this[$mol_ambient_ref] = owner?.$ || $mol_object2.$;
+            return this[$mol_ambient_ref] = owner?.$ || this.constructor.$ || $mol_object2.$;
         }
         set $(next) {
             if (this[$mol_ambient_ref])
@@ -3361,7 +3361,7 @@ var $;
             }
             return names;
         }
-        theme(next = null) {
+        theme(next) {
             return next;
         }
         attr_static() {
@@ -3372,7 +3372,7 @@ var $;
         }
         attr() {
             return {
-                mol_theme: this.theme() ?? undefined,
+                mol_theme: this.theme(),
             };
         }
         style() {
@@ -3507,9 +3507,6 @@ var $;
     __decorate([
         $mol_memo.method
     ], $mol_view.prototype, "view_names", null);
-    __decorate([
-        $mol_mem
-    ], $mol_view.prototype, "theme", null);
     __decorate([
         $mol_mem
     ], $mol_view.prototype, "event_async", null);

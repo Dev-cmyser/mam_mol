@@ -66,11 +66,11 @@ namespace $.$$ {
 			return norm_bool( this.value( field, next ) )
 		}
 
-		model_pick(field: string, next?: Value | null) {
+		override model_pick(field: string, next?: Value | null) {
 			return (this.model() as unknown as Model)[field](next)
 		}
 
-		state_pick(field: string, next?: Value | null) {
+		override state_pick(field: string, next?: Value | null) {
 			return this.state( next === undefined ? next : { ... this.state(), [ field ]: next } )[ field ]
 		}
 
@@ -113,7 +113,7 @@ namespace $.$$ {
 		@ $mol_mem
 		override result( next?: string | Error ) {
 			this.state()
-			if (next instanceof Error) next = next.message || this.message_invalid()
+			if (next instanceof Error) next = this.errors()[next.message] || next.message || this.form_invalid()
 
 			return next ?? ''
 		}

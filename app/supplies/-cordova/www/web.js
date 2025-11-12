@@ -449,7 +449,7 @@ var $;
             if (this[$mol_ambient_ref])
                 return this[$mol_ambient_ref];
             const owner = $mol_owning_get(this);
-            return this[$mol_ambient_ref] = owner?.$ || $mol_object2.$;
+            return this[$mol_ambient_ref] = owner?.$ || this.constructor.$ || $mol_object2.$;
         }
         set $(next) {
             if (this[$mol_ambient_ref])
@@ -3361,7 +3361,7 @@ var $;
             }
             return names;
         }
-        theme(next = null) {
+        theme(next) {
             return next;
         }
         attr_static() {
@@ -3372,7 +3372,7 @@ var $;
         }
         attr() {
             return {
-                mol_theme: this.theme() ?? undefined,
+                mol_theme: this.theme(),
             };
         }
         style() {
@@ -3507,9 +3507,6 @@ var $;
     __decorate([
         $mol_memo.method
     ], $mol_view.prototype, "view_names", null);
-    __decorate([
-        $mol_mem
-    ], $mol_view.prototype, "theme", null);
     __decorate([
         $mol_mem
     ], $mol_view.prototype, "event_async", null);
@@ -4976,21 +4973,59 @@ var $;
 
 ;
 "use strict";
-
-;
-"use strict";
-var $node = $node || {};
-
-;
-"use strict";
 var $;
 (function ($) {
-    const TextEncoder = globalThis.TextEncoder ?? $node.util.TextEncoder;
-    const encoder = new TextEncoder();
-    function $mol_charset_encode(value) {
-        return encoder.encode(value);
+    let buf = new Uint8Array(2 ** 12);
+    function $mol_charset_encode(str) {
+        const capacity = str.length * 3;
+        if (buf.byteLength < capacity)
+            buf = new Uint8Array(capacity);
+        return buf.slice(0, $mol_charset_encode_to(str, buf));
     }
     $.$mol_charset_encode = $mol_charset_encode;
+    function $mol_charset_encode_to(str, buf, from = 0) {
+        let pos = from;
+        for (let i = 0; i < str.length; i++) {
+            let code = str.charCodeAt(i);
+            if (code < 0x80) {
+                buf[pos++] = code;
+            }
+            else if (code < 0x800) {
+                buf[pos++] = 0xc0 | (code >> 6);
+                buf[pos++] = 0x80 | (code & 0x3f);
+            }
+            else if (code < 0xd800 || code >= 0xe000) {
+                buf[pos++] = 0xe0 | (code >> 12);
+                buf[pos++] = 0x80 | ((code >> 6) & 0x3f);
+                buf[pos++] = 0x80 | (code & 0x3f);
+            }
+            else {
+                const point = ((code - 0xd800) << 10) + str.charCodeAt(++i) + 0x2400;
+                buf[pos++] = 0xf0 | (point >> 18);
+                buf[pos++] = 0x80 | ((point >> 12) & 0x3f);
+                buf[pos++] = 0x80 | ((point >> 6) & 0x3f);
+                buf[pos++] = 0x80 | (point & 0x3f);
+            }
+        }
+        return pos - from;
+    }
+    $.$mol_charset_encode_to = $mol_charset_encode_to;
+    function $mol_charset_encode_size(str) {
+        let size = 0;
+        for (let i = 0; i < str.length; i++) {
+            let code = str.charCodeAt(i);
+            if (code < 0x80)
+                size += 1;
+            else if (code < 0x800)
+                size += 2;
+            else if (code < 0xd800 || code >= 0xe000)
+                size += 3;
+            else
+                size += 4;
+        }
+        return size;
+    }
+    $.$mol_charset_encode_size = $mol_charset_encode_size;
 })($ || ($ = {}));
 
 ;
@@ -5377,6 +5412,74 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    let $mol_rest_code;
+    (function ($mol_rest_code) {
+        $mol_rest_code[$mol_rest_code["Continue"] = 100] = "Continue";
+        $mol_rest_code[$mol_rest_code["Switching protocols"] = 101] = "Switching protocols";
+        $mol_rest_code[$mol_rest_code["Processing"] = 102] = "Processing";
+        $mol_rest_code[$mol_rest_code["OK"] = 200] = "OK";
+        $mol_rest_code[$mol_rest_code["Created"] = 201] = "Created";
+        $mol_rest_code[$mol_rest_code["Accepted"] = 202] = "Accepted";
+        $mol_rest_code[$mol_rest_code["Non-Authoritative Information"] = 203] = "Non-Authoritative Information";
+        $mol_rest_code[$mol_rest_code["No Content"] = 204] = "No Content";
+        $mol_rest_code[$mol_rest_code["Reset Content"] = 205] = "Reset Content";
+        $mol_rest_code[$mol_rest_code["Partial Content"] = 206] = "Partial Content";
+        $mol_rest_code[$mol_rest_code["Multi Status"] = 207] = "Multi Status";
+        $mol_rest_code[$mol_rest_code["Already Reported"] = 208] = "Already Reported";
+        $mol_rest_code[$mol_rest_code["IM Used"] = 226] = "IM Used";
+        $mol_rest_code[$mol_rest_code["Multiple Choices"] = 300] = "Multiple Choices";
+        $mol_rest_code[$mol_rest_code["Moved Permanently"] = 301] = "Moved Permanently";
+        $mol_rest_code[$mol_rest_code["Found"] = 302] = "Found";
+        $mol_rest_code[$mol_rest_code["See Other"] = 303] = "See Other";
+        $mol_rest_code[$mol_rest_code["Not Modified"] = 304] = "Not Modified";
+        $mol_rest_code[$mol_rest_code["Use Proxy"] = 305] = "Use Proxy";
+        $mol_rest_code[$mol_rest_code["Temporary Redirect"] = 307] = "Temporary Redirect";
+        $mol_rest_code[$mol_rest_code["Bad Request"] = 400] = "Bad Request";
+        $mol_rest_code[$mol_rest_code["Unauthorized"] = 401] = "Unauthorized";
+        $mol_rest_code[$mol_rest_code["Payment Required"] = 402] = "Payment Required";
+        $mol_rest_code[$mol_rest_code["Forbidden"] = 403] = "Forbidden";
+        $mol_rest_code[$mol_rest_code["Not Found"] = 404] = "Not Found";
+        $mol_rest_code[$mol_rest_code["Method Not Allowed"] = 405] = "Method Not Allowed";
+        $mol_rest_code[$mol_rest_code["Not Acceptable"] = 406] = "Not Acceptable";
+        $mol_rest_code[$mol_rest_code["Proxy Authentication Required"] = 407] = "Proxy Authentication Required";
+        $mol_rest_code[$mol_rest_code["Request Timeout"] = 408] = "Request Timeout";
+        $mol_rest_code[$mol_rest_code["Conflict"] = 409] = "Conflict";
+        $mol_rest_code[$mol_rest_code["Gone"] = 410] = "Gone";
+        $mol_rest_code[$mol_rest_code["Length Required"] = 411] = "Length Required";
+        $mol_rest_code[$mol_rest_code["Precondition Failed"] = 412] = "Precondition Failed";
+        $mol_rest_code[$mol_rest_code["Request Entity Too Large"] = 413] = "Request Entity Too Large";
+        $mol_rest_code[$mol_rest_code["Request URI Too Long"] = 414] = "Request URI Too Long";
+        $mol_rest_code[$mol_rest_code["Unsupported Media Type"] = 415] = "Unsupported Media Type";
+        $mol_rest_code[$mol_rest_code["Requested Range Not Satisfiable"] = 416] = "Requested Range Not Satisfiable";
+        $mol_rest_code[$mol_rest_code["Expectation Failed"] = 417] = "Expectation Failed";
+        $mol_rest_code[$mol_rest_code["Teapot"] = 418] = "Teapot";
+        $mol_rest_code[$mol_rest_code["Unprocessable Entity"] = 422] = "Unprocessable Entity";
+        $mol_rest_code[$mol_rest_code["Locked"] = 423] = "Locked";
+        $mol_rest_code[$mol_rest_code["Failed Dependency"] = 424] = "Failed Dependency";
+        $mol_rest_code[$mol_rest_code["Upgrade Required"] = 426] = "Upgrade Required";
+        $mol_rest_code[$mol_rest_code["Precondition Required"] = 428] = "Precondition Required";
+        $mol_rest_code[$mol_rest_code["Too Many Requests"] = 429] = "Too Many Requests";
+        $mol_rest_code[$mol_rest_code["Request Header Fields Too Large"] = 431] = "Request Header Fields Too Large";
+        $mol_rest_code[$mol_rest_code["Unavailable For Legal Reasons"] = 451] = "Unavailable For Legal Reasons";
+        $mol_rest_code[$mol_rest_code["Internal Server Error"] = 500] = "Internal Server Error";
+        $mol_rest_code[$mol_rest_code["Not Implemented"] = 501] = "Not Implemented";
+        $mol_rest_code[$mol_rest_code["Bad Gateway"] = 502] = "Bad Gateway";
+        $mol_rest_code[$mol_rest_code["Service Unavailable"] = 503] = "Service Unavailable";
+        $mol_rest_code[$mol_rest_code["Gateway Timeout"] = 504] = "Gateway Timeout";
+        $mol_rest_code[$mol_rest_code["HTTP Version Not Supported"] = 505] = "HTTP Version Not Supported";
+        $mol_rest_code[$mol_rest_code["Insufficient Storage"] = 507] = "Insufficient Storage";
+        $mol_rest_code[$mol_rest_code["Loop Detected"] = 508] = "Loop Detected";
+        $mol_rest_code[$mol_rest_code["Not Extended"] = 510] = "Not Extended";
+        $mol_rest_code[$mol_rest_code["Network Authentication Required"] = 511] = "Network Authentication Required";
+        $mol_rest_code[$mol_rest_code["Network Read Timeout Error"] = 598] = "Network Read Timeout Error";
+        $mol_rest_code[$mol_rest_code["Network Connect Timeout Error"] = 599] = "Network Connect Timeout Error";
+    })($mol_rest_code = $.$mol_rest_code || ($.$mol_rest_code = {}));
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     function $mol_dom_parse(text, type = 'application/xhtml+xml') {
         const parser = new $mol_dom_context.DOMParser();
         const doc = parser.parseFromString(text, type);
@@ -5392,12 +5495,9 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    class $mol_fetch_response extends $mol_object2 {
+    class $mol_fetch_response extends $mol_object {
         native;
-        constructor(native) {
-            super();
-            this.native = native;
-        }
+        request;
         status() {
             const types = ['unknown', 'inform', 'success', 'redirect', 'wrong', 'failed'];
             return types[Math.floor(this.native.status / 100)];
@@ -5405,8 +5505,11 @@ var $;
         code() {
             return this.native.status;
         }
+        ok() {
+            return this.native.ok;
+        }
         message() {
-            return this.native.statusText || `HTTP Error ${this.code()}`;
+            return $mol_rest_code[this.code()] || `HTTP Error ${this.code()}`;
         }
         headers() {
             return this.native.headers;
@@ -5419,8 +5522,7 @@ var $;
         }
         text() {
             const buffer = this.buffer();
-            const native = this.native;
-            const mime = native.headers.get('content-type') || '';
+            const mime = this.mime() || '';
             const [, charset] = /charset=(.*)/.exec(mime) || [, 'utf-8'];
             const decoder = new TextDecoder(charset);
             return decoder.decode(buffer);
@@ -5460,14 +5562,13 @@ var $;
         $mol_action
     ], $mol_fetch_response.prototype, "html", null);
     $.$mol_fetch_response = $mol_fetch_response;
-    class $mol_fetch extends $mol_object2 {
-        static request(input, init = {}) {
+    class $mol_fetch_request extends $mol_object {
+        native;
+        response_async() {
             const controller = new AbortController();
             let done = false;
-            const promise = fetch(input, {
-                ...init,
-                signal: controller.signal,
-            }).finally(() => {
+            const request = new Request(this.native, { signal: controller.signal });
+            const promise = fetch(request).finally(() => {
                 done = true;
             });
             return Object.assign(promise, {
@@ -5477,14 +5578,34 @@ var $;
                 },
             });
         }
-        static response(input, init) {
-            return new $mol_fetch_response($mol_wire_sync(this).request(input, init));
+        response() {
+            return this.$.$mol_fetch_response.make({
+                native: $mol_wire_sync(this).response_async(),
+                request: this
+            });
         }
-        static success(input, init) {
-            const response = this.response(input, init);
+        success() {
+            const response = this.response();
             if (response.status() === 'success')
                 return response;
             throw new Error(response.message(), { cause: response });
+        }
+    }
+    __decorate([
+        $mol_action
+    ], $mol_fetch_request.prototype, "response", null);
+    $.$mol_fetch_request = $mol_fetch_request;
+    class $mol_fetch extends $mol_object {
+        static request(input, init) {
+            return this.$.$mol_fetch_request.make({
+                native: new Request(input, init)
+            });
+        }
+        static response(input, init) {
+            return this.request(input, init).response();
+        }
+        static success(input, init) {
+            return this.request(input, init).success();
         }
         static stream(input, init) {
             return this.success(input, init).stream();
@@ -5513,34 +5634,7 @@ var $;
     }
     __decorate([
         $mol_action
-    ], $mol_fetch, "response", null);
-    __decorate([
-        $mol_action
-    ], $mol_fetch, "success", null);
-    __decorate([
-        $mol_action
-    ], $mol_fetch, "stream", null);
-    __decorate([
-        $mol_action
-    ], $mol_fetch, "text", null);
-    __decorate([
-        $mol_action
-    ], $mol_fetch, "json", null);
-    __decorate([
-        $mol_action
-    ], $mol_fetch, "blob", null);
-    __decorate([
-        $mol_action
-    ], $mol_fetch, "buffer", null);
-    __decorate([
-        $mol_action
-    ], $mol_fetch, "xml", null);
-    __decorate([
-        $mol_action
-    ], $mol_fetch, "xhtml", null);
-    __decorate([
-        $mol_action
-    ], $mol_fetch, "html", null);
+    ], $mol_fetch, "request", null);
     $.$mol_fetch = $mol_fetch;
 })($ || ($ = {}));
 
@@ -5824,7 +5918,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $mol_style_attach("mol/status/status.view.css", "[mol_status] {\n\tpadding: var(--mol_gap_text);\n\tborder-radius: var(--mol_gap_round);\n\tdisplay: block;\n}\n\n[mol_status]:not([mol_view_error=\"Promise\"]) {\n\tcolor: var(--mol_theme_focus);\n}\n\n[mol_status]:not([mol_view_error=\"Promise\"]):empty {\n\tdisplay: none;\n}\n");
+    $mol_style_attach("mol/status/status.view.css", "[mol_status] {\n\tpadding: var(--mol_gap_text);\n\tborder-radius: var(--mol_gap_round);\n\tdisplay: block;\n\tflex-shrink: 1;\n\tword-wrap: break-word;\n}\n\n[mol_status]:not([mol_view_error=\"Promise\"]) {\n\tcolor: var(--mol_theme_focus);\n}\n\n[mol_status]:not([mol_view_error=\"Promise\"]):empty {\n\tdisplay: none;\n}\n");
 })($ || ($ = {}));
 
 ;
@@ -5846,6 +5940,9 @@ var $;
 		keydown(next){
 			if(next !== undefined) return next;
 			return null;
+		}
+		form_invalid(){
+			return (this.$.$mol_locale.text("$mol_form_form_invalid"));
 		}
 		form_fields(){
 			return [];
@@ -5914,8 +6011,8 @@ var $;
 		message_done(){
 			return (this.$.$mol_locale.text("$mol_form_message_done"));
 		}
-		message_invalid(){
-			return (this.$.$mol_locale.text("$mol_form_message_invalid"));
+		errors(){
+			return {"Form invalid": (this.form_invalid())};
 		}
 		rows(){
 			return [(this.Body()), (this.Foot())];
@@ -5930,6 +6027,13 @@ var $;
 	($mol_mem(($.$mol_form.prototype), "Foot"));
 	($mol_mem(($.$mol_form.prototype), "save"));
 
+
+;
+"use strict";
+var $;
+(function ($) {
+    $mol_style_attach("mol/form/form.view.css", "[mol_form] {\r\n\tgap: var(--mol_gap_block);\r\n}\r\n\r\n[mol_form_body] {\r\n\tgap: var(--mol_gap_block);\r\n}");
+})($ || ($ = {}));
 
 ;
 "use strict";
@@ -5957,7 +6061,7 @@ var $;
             }
             result(next) {
                 if (next instanceof Error)
-                    next = next.message || this.message_invalid();
+                    next = this.errors()[next.message] || next.message || this.form_invalid();
                 return next ?? '';
             }
             buttons() {
@@ -5969,7 +6073,7 @@ var $;
             submit(next) {
                 try {
                     if (!this.submit_allowed()) {
-                        throw new Error(this.message_invalid());
+                        throw new Error('Form invalid');
                     }
                     this.save(next);
                 }
@@ -6001,13 +6105,6 @@ var $;
         ], $mol_form.prototype, "submit", null);
         $$.$mol_form = $mol_form;
     })($$ = $.$$ || ($.$$ = {}));
-})($ || ($ = {}));
-
-;
-"use strict";
-var $;
-(function ($) {
-    $mol_style_attach("mol/form/form.view.css", "[mol_form] {\r\n\tgap: var(--mol_gap_block);\r\n}\r\n\r\n[mol_form_body] {\r\n\tgap: var(--mol_gap_block);\r\n}");
 })($ || ($ = {}));
 
 ;
@@ -6304,6 +6401,7 @@ var $;
             Body_content: {
                 padding: $mol_gap.block,
                 minHeight: 0,
+                minWidth: 0,
                 flex: {
                     direction: 'column',
                     shrink: 1,

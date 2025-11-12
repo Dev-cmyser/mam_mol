@@ -539,16 +539,16 @@ var $;
             $mol_assert_unique([1], [2], [3]);
         },
         'two must be alike'() {
-            $mol_assert_like([3], [3]);
+            $mol_assert_equal([3], [3]);
         },
         'three must be alike'() {
-            $mol_assert_like([3], [3], [3]);
+            $mol_assert_equal([3], [3], [3]);
         },
         'two object must be alike'() {
-            $mol_assert_like({ a: 1 }, { a: 1 });
+            $mol_assert_equal({ a: 1 }, { a: 1 });
         },
         'three object must be alike'() {
-            $mol_assert_like({ a: 1 }, { a: 1 }, { a: 1 });
+            $mol_assert_equal({ a: 1 }, { a: 1 }, { a: 1 });
         },
     });
 })($ || ($ = {}));
@@ -636,7 +636,7 @@ var $;
 ;
 "use strict";
 var $;
-(function ($) {
+(function ($_1) {
     $mol_test({
         'init with overload'() {
             class X extends $mol_object {
@@ -648,6 +648,13 @@ var $;
                 foo: () => 2,
             });
             $mol_assert_equal(x.foo(), 2);
+        },
+        'Context in instance inherits from class'($) {
+            const custom = $.$mol_ambient({});
+            class X extends $.$mol_object {
+                static $ = custom;
+            }
+            $mol_assert_equal(new X().$, custom);
         },
     });
 })($ || ($ = {}));
@@ -951,7 +958,7 @@ var $;
             }
             await $mol_wire_async(A).a();
             $mol_assert_equal(A.instances.length, 2);
-            $mol_assert_equal(A.instances[0] instanceof A);
+            $mol_assert_equal(A.instances[0] instanceof A, true);
             $mol_assert_equal(A.instances[0], A.instances[1]);
         }
     });
@@ -2409,12 +2416,39 @@ var $;
 var $;
 (function ($) {
     $mol_test({
-        'encode utf8 string'() {
-            const str = 'Hello, ΧΨΩЫ';
-            const encoded = new Uint8Array([72, 101, 108, 108, 111, 44, 32, 206, 167, 206, 168, 206, 169, 208, 171]);
-            $mol_assert_like($mol_charset_encode(str), encoded);
+        'encode empty'() {
+            $mol_assert_equal($mol_charset_encode(''), new Uint8Array([]));
+        },
+        'encode 1 octet'() {
+            $mol_assert_equal($mol_charset_encode('F'), new Uint8Array([0x46]));
+        },
+        'encode 2 octet'() {
+            $mol_assert_equal($mol_charset_encode('Б'), new Uint8Array([0xd0, 0x91]));
+        },
+        'encode 3 octet'() {
+            $mol_assert_equal($mol_charset_encode('ह'), new Uint8Array([0xe0, 0xa4, 0xb9]));
+        },
+        'encode 4 octet'() {
+            $mol_assert_equal($mol_charset_encode('𐍈'), new Uint8Array([0xf0, 0x90, 0x8d, 0x88]));
+        },
+        'encode surrogate pair'() {
+            $mol_assert_equal($mol_charset_encode('😀'), new Uint8Array([0xf0, 0x9f, 0x98, 0x80]));
         },
     });
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($_1) {
+    var $$;
+    (function ($$) {
+        $mol_test({
+            async "Get and parse"($) {
+                $mol_assert_equal(await $mol_wire_async($mol_fetch).text('data:text/plain,foo'), 'foo');
+            },
+        });
+    })($$ = $_1.$$ || ($_1.$$ = {}));
 })($ || ($ = {}));
 
 ;
@@ -3267,10 +3301,13 @@ var $;
     const png = new Uint8Array([0x1a, 0x0a, 0x00, 0x49, 0x48, 0x78, 0xda]);
     $mol_test({
         'base64 encode string'() {
-            $mol_assert_equal($mol_base64_encode('Hello, ΧΨΩЫ'), 'SGVsbG8sIM6nzqjOqdCr');
+            $mol_assert_equal($mol_base64_encode($mol_charset_encode('Hello, ΧΨΩЫ')), 'SGVsbG8sIM6nzqjOqdCr');
         },
         'base64 encode binary'() {
             $mol_assert_equal($mol_base64_encode(png), 'GgoASUh42g==');
+        },
+        'base64 encode string with plus'() {
+            $mol_assert_equal($mol_base64_encode($mol_charset_encode('шоешпо')), '0YjQvtC10YjQv9C+');
         },
     });
 })($ || ($ = {}));
@@ -3280,12 +3317,19 @@ var $;
 var $;
 (function ($) {
     const png = new Uint8Array([0x1a, 0x0a, 0x00, 0x49, 0x48, 0x78, 0xda]);
+    const with_plus = new TextEncoder().encode('шоешпо');
     $mol_test({
         'base64 decode string'() {
-            $mol_assert_like($mol_base64_decode('SGVsbG8sIM6nzqjOqdCr'), new TextEncoder().encode('Hello, ΧΨΩЫ'));
+            $mol_assert_equal($mol_base64_decode('SGVsbG8sIM6nzqjOqdCr'), new TextEncoder().encode('Hello, ΧΨΩЫ'));
         },
         'base64 decode binary'() {
-            $mol_assert_like($mol_base64_decode('GgoASUh42g=='), png);
+            $mol_assert_equal($mol_base64_decode('GgoASUh42g=='), png);
+        },
+        'base64 decode binary - without equals'() {
+            $mol_assert_equal($mol_base64_decode('GgoASUh42g'), png);
+        },
+        'base64 decode with plus'() {
+            $mol_assert_equal($mol_base64_decode('0YjQvtC10YjQv9C+'), with_plus);
         },
     });
 })($ || ($ = {}));

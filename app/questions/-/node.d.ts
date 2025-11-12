@@ -461,7 +461,7 @@ declare namespace $ {
     }> {
     }
     const $mol_run_spawn: (...args: Parameters<(typeof $node)["child_process"]["spawn"]>) => import("child_process").ChildProcess;
-    const $mol_run_spawn_sync: (...args: Parameters<(typeof $node)["child_process"]["spawnSync"]>) => import("child_process").SpawnSyncReturns<string | Buffer<ArrayBufferLike>>;
+    const $mol_run_spawn_sync: (...args: Parameters<(typeof $node)["child_process"]["spawnSync"]>) => import("child_process").SpawnSyncReturns<string | NonSharedBuffer>;
     type $mol_run_options = {
         command: readonly string[] | string;
         dir: string;
@@ -470,10 +470,10 @@ declare namespace $ {
     };
     class $mol_run extends $mol_object {
         static async_enabled(): boolean;
-        static spawn(options: $mol_run_options): $mol_run_error_context | import("child_process").SpawnSyncReturns<string | Buffer<ArrayBufferLike>>;
+        static spawn(options: $mol_run_options): $mol_run_error_context | import("child_process").SpawnSyncReturns<string | NonSharedBuffer>;
         static spawn_async({ dir, sync, timeout, command, env }: $mol_run_options & {
             sync?: boolean;
-        }): import("child_process").SpawnSyncReturns<string | Buffer<ArrayBufferLike>> | (Promise<$mol_run_error_context> & {
+        }): import("child_process").SpawnSyncReturns<string | NonSharedBuffer> | (Promise<$mol_run_error_context> & {
             destructor: () => void;
         });
         static error_message(res?: $mol_run_error_context): string;
@@ -481,7 +481,7 @@ declare namespace $ {
 }
 
 declare namespace $ {
-    function $mol_exec(this: $, dir: string, command: string, ...args: readonly string[]): $mol_run_error_context | import("child_process").SpawnSyncReturns<string | Buffer<ArrayBufferLike>>;
+    function $mol_exec(this: $, dir: string, command: string, ...args: readonly string[]): $mol_run_error_context | import("child_process").SpawnSyncReturns<string | NonSharedBuffer>;
 }
 
 declare namespace $ {
@@ -948,11 +948,13 @@ declare namespace $ {
 }
 
 declare namespace $ {
-    function $mol_charset_decode(buffer: BufferSource, encoding?: $mol_charset_encoding): string;
+    function $mol_charset_decode(buffer: AllowSharedBufferSource, encoding?: $mol_charset_encoding): string;
 }
 
 declare namespace $ {
-    function $mol_charset_encode(value: string): Uint8Array<ArrayBuffer>;
+    function $mol_charset_encode(str: string): Uint8Array<ArrayBuffer>;
+    function $mol_charset_encode_to(str: string, buf: Uint8Array<ArrayBuffer>, from?: number): number;
+    function $mol_charset_encode_size(str: string): number;
 }
 
 declare namespace $ {
@@ -1290,7 +1292,7 @@ declare namespace $ {
         static view_names(suffix: string): string[];
         view_names_owned(): string[];
         view_names(): Set<string>;
-        theme(next?: null | string): string | null;
+        theme(next?: string | null): string | null | undefined;
         attr_static(): {
             [key: string]: string | number | boolean | null;
         };
@@ -3074,6 +3076,23 @@ declare namespace $.$$ {
 
 declare namespace $ {
 
+	export class $mol_embed_vklive extends $mol_embed_service {
+	}
+	
+}
+
+//# sourceMappingURL=vklive.view.tree.d.ts.map
+declare namespace $.$$ {
+    class $mol_embed_vklive extends $.$mol_embed_vklive {
+        video_embed(): string;
+        channel_id(): string;
+        video_id(): string;
+        video_preview(): string;
+    }
+}
+
+declare namespace $ {
+
 	type $mol_image__title_mol_embed_any_1 = $mol_type_enforce<
 		ReturnType< $mol_embed_any['title'] >
 		,
@@ -3114,6 +3133,16 @@ declare namespace $ {
 		,
 		ReturnType< $mol_embed_rutube['uri'] >
 	>
+	type $mol_embed_vklive__title_mol_embed_any_9 = $mol_type_enforce<
+		ReturnType< $mol_embed_any['title'] >
+		,
+		ReturnType< $mol_embed_vklive['title'] >
+	>
+	type $mol_embed_vklive__uri_mol_embed_any_10 = $mol_type_enforce<
+		ReturnType< $mol_embed_any['uri'] >
+		,
+		ReturnType< $mol_embed_vklive['uri'] >
+	>
 	export class $mol_embed_any extends $mol_view {
 		title( ): string
 		uri( ): string
@@ -3121,6 +3150,7 @@ declare namespace $ {
 		Object( ): $mol_embed_native
 		Youtube( ): $mol_embed_youtube
 		Rutube( ): $mol_embed_rutube
+		Vklive( ): $mol_embed_vklive
 	}
 	
 }
@@ -3128,7 +3158,7 @@ declare namespace $ {
 //# sourceMappingURL=any.view.tree.d.ts.map
 declare namespace $.$$ {
     class $mol_embed_any extends $.$mol_embed_any {
-        type(): "object" | "image" | "youtube" | "rutube";
+        type(): "object" | "image" | "youtube" | "rutube" | "vklive";
         sub(): $.$mol_image[] | $.$mol_embed_youtube[] | $.$mol_embed_native[];
     }
 }
@@ -3764,15 +3794,80 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    enum $mol_rest_code {
+        'Continue' = 100,
+        'Switching protocols' = 101,
+        'Processing' = 102,
+        'OK' = 200,
+        'Created' = 201,
+        'Accepted' = 202,
+        'Non-Authoritative Information' = 203,
+        'No Content' = 204,
+        'Reset Content' = 205,
+        'Partial Content' = 206,
+        'Multi Status' = 207,
+        'Already Reported' = 208,
+        'IM Used' = 226,
+        'Multiple Choices' = 300,
+        'Moved Permanently' = 301,
+        'Found' = 302,
+        'See Other' = 303,
+        'Not Modified' = 304,
+        'Use Proxy' = 305,
+        'Temporary Redirect' = 307,
+        'Bad Request' = 400,
+        'Unauthorized' = 401,
+        'Payment Required' = 402,
+        'Forbidden' = 403,
+        'Not Found' = 404,
+        'Method Not Allowed' = 405,
+        'Not Acceptable' = 406,
+        'Proxy Authentication Required' = 407,
+        'Request Timeout' = 408,
+        'Conflict' = 409,
+        'Gone' = 410,
+        'Length Required' = 411,
+        'Precondition Failed' = 412,
+        'Request Entity Too Large' = 413,
+        'Request URI Too Long' = 414,
+        'Unsupported Media Type' = 415,
+        'Requested Range Not Satisfiable' = 416,
+        'Expectation Failed' = 417,
+        'Teapot' = 418,
+        'Unprocessable Entity' = 422,
+        'Locked' = 423,
+        'Failed Dependency' = 424,
+        'Upgrade Required' = 426,
+        'Precondition Required' = 428,
+        'Too Many Requests' = 429,
+        'Request Header Fields Too Large' = 431,
+        'Unavailable For Legal Reasons' = 451,
+        'Internal Server Error' = 500,
+        'Not Implemented' = 501,
+        'Bad Gateway' = 502,
+        'Service Unavailable' = 503,
+        'Gateway Timeout' = 504,
+        'HTTP Version Not Supported' = 505,
+        'Insufficient Storage' = 507,
+        'Loop Detected' = 508,
+        'Not Extended' = 510,
+        'Network Authentication Required' = 511,
+        'Network Read Timeout Error' = 598,
+        'Network Connect Timeout Error' = 599
+    }
+}
+
+declare namespace $ {
     function $mol_dom_parse(text: string, type?: DOMParserSupportedType): Document;
 }
 
 declare namespace $ {
-    class $mol_fetch_response extends $mol_object2 {
+    class $mol_fetch_response extends $mol_object {
         readonly native: Response;
-        constructor(native: Response);
+        readonly request: $mol_fetch_request;
         status(): "success" | "unknown" | "inform" | "redirect" | "wrong" | "failed";
         code(): number;
+        ok(): boolean;
         message(): string;
         headers(): Headers;
         mime(): string | null;
@@ -3785,10 +3880,16 @@ declare namespace $ {
         xhtml(): Document;
         html(): Document;
     }
-    class $mol_fetch extends $mol_object2 {
-        static request(input: RequestInfo, init?: RequestInit): Promise<Response> & {
+    class $mol_fetch_request extends $mol_object {
+        readonly native: Request;
+        response_async(): Promise<Response> & {
             destructor: () => void;
         };
+        response(): $mol_fetch_response;
+        success(): $mol_fetch_response;
+    }
+    class $mol_fetch extends $mol_object {
+        static request(input: RequestInfo, init?: RequestInit): $mol_fetch_request;
         static response(input: RequestInfo, init?: RequestInit): $mol_fetch_response;
         static success(input: RequestInfo, init?: RequestInit): $mol_fetch_response;
         static stream(input: RequestInfo, init?: RequestInit): ReadableStream<Uint8Array<ArrayBuffer>> | null;

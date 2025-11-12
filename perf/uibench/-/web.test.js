@@ -724,16 +724,16 @@ var $;
             $mol_assert_unique([1], [2], [3]);
         },
         'two must be alike'() {
-            $mol_assert_like([3], [3]);
+            $mol_assert_equal([3], [3]);
         },
         'three must be alike'() {
-            $mol_assert_like([3], [3], [3]);
+            $mol_assert_equal([3], [3], [3]);
         },
         'two object must be alike'() {
-            $mol_assert_like({ a: 1 }, { a: 1 });
+            $mol_assert_equal({ a: 1 }, { a: 1 });
         },
         'three object must be alike'() {
-            $mol_assert_like({ a: 1 }, { a: 1 }, { a: 1 });
+            $mol_assert_equal({ a: 1 }, { a: 1 }, { a: 1 });
         },
     });
 })($ || ($ = {}));
@@ -844,7 +844,7 @@ var $;
 ;
 "use strict";
 var $;
-(function ($) {
+(function ($_1) {
     $mol_test({
         'init with overload'() {
             class X extends $mol_object {
@@ -856,6 +856,13 @@ var $;
                 foo: () => 2,
             });
             $mol_assert_equal(x.foo(), 2);
+        },
+        'Context in instance inherits from class'($) {
+            const custom = $.$mol_ambient({});
+            class X extends $.$mol_object {
+                static $ = custom;
+            }
+            $mol_assert_equal(new X().$, custom);
         },
     });
 })($ || ($ = {}));
@@ -1159,7 +1166,7 @@ var $;
             }
             await $mol_wire_async(A).a();
             $mol_assert_equal(A.instances.length, 2);
-            $mol_assert_equal(A.instances[0] instanceof A);
+            $mol_assert_equal(A.instances[0] instanceof A, true);
             $mol_assert_equal(A.instances[0], A.instances[1]);
         }
     });

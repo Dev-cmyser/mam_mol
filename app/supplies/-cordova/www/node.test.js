@@ -147,7 +147,7 @@ var $node = new Proxy({ require }, {
                 const module = cache.get(name);
                 if (module)
                     return module;
-                throw import(name).then(module => cache.set(name, module));
+                throw Object.assign(import(name).then(module => cache.set(name, module)), { cause: error });
             }
             $.$mol_fail_log(error);
             return null;
@@ -363,7 +363,7 @@ var $;
             if (this[$mol_ambient_ref])
                 return this[$mol_ambient_ref];
             const owner = $mol_owning_get(this);
-            return this[$mol_ambient_ref] = owner?.$ || $mol_object2.$;
+            return this[$mol_ambient_ref] = owner?.$ || this.constructor.$ || $mol_object2.$;
         }
         set $(next) {
             if (this[$mol_ambient_ref])
@@ -3079,12 +3079,57 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    const TextEncoder = globalThis.TextEncoder ?? $node.util.TextEncoder;
-    const encoder = new TextEncoder();
-    function $mol_charset_encode(value) {
-        return encoder.encode(value);
+    let buf = new Uint8Array(2 ** 12);
+    function $mol_charset_encode(str) {
+        const capacity = str.length * 3;
+        if (buf.byteLength < capacity)
+            buf = new Uint8Array(capacity);
+        return buf.slice(0, $mol_charset_encode_to(str, buf));
     }
     $.$mol_charset_encode = $mol_charset_encode;
+    function $mol_charset_encode_to(str, buf, from = 0) {
+        let pos = from;
+        for (let i = 0; i < str.length; i++) {
+            let code = str.charCodeAt(i);
+            if (code < 0x80) {
+                buf[pos++] = code;
+            }
+            else if (code < 0x800) {
+                buf[pos++] = 0xc0 | (code >> 6);
+                buf[pos++] = 0x80 | (code & 0x3f);
+            }
+            else if (code < 0xd800 || code >= 0xe000) {
+                buf[pos++] = 0xe0 | (code >> 12);
+                buf[pos++] = 0x80 | ((code >> 6) & 0x3f);
+                buf[pos++] = 0x80 | (code & 0x3f);
+            }
+            else {
+                const point = ((code - 0xd800) << 10) + str.charCodeAt(++i) + 0x2400;
+                buf[pos++] = 0xf0 | (point >> 18);
+                buf[pos++] = 0x80 | ((point >> 12) & 0x3f);
+                buf[pos++] = 0x80 | ((point >> 6) & 0x3f);
+                buf[pos++] = 0x80 | (point & 0x3f);
+            }
+        }
+        return pos - from;
+    }
+    $.$mol_charset_encode_to = $mol_charset_encode_to;
+    function $mol_charset_encode_size(str) {
+        let size = 0;
+        for (let i = 0; i < str.length; i++) {
+            let code = str.charCodeAt(i);
+            if (code < 0x80)
+                size += 1;
+            else if (code < 0x800)
+                size += 2;
+            else if (code < 0xd800 || code >= 0xe000)
+                size += 3;
+            else
+                size += 4;
+        }
+        return size;
+    }
+    $.$mol_charset_encode_size = $mol_charset_encode_size;
 })($ || ($ = {}));
 
 ;
@@ -4519,7 +4564,7 @@ var $;
             }
             return names;
         }
-        theme(next = null) {
+        theme(next) {
             return next;
         }
         attr_static() {
@@ -4530,7 +4575,7 @@ var $;
         }
         attr() {
             return {
-                mol_theme: this.theme() ?? undefined,
+                mol_theme: this.theme(),
             };
         }
         style() {
@@ -4665,9 +4710,6 @@ var $;
     __decorate([
         $mol_memo.method
     ], $mol_view.prototype, "view_names", null);
-    __decorate([
-        $mol_mem
-    ], $mol_view.prototype, "theme", null);
     __decorate([
         $mol_mem
     ], $mol_view.prototype, "event_async", null);
@@ -6281,7 +6323,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $mol_style_attach("mol/status/status.view.css", "[mol_status] {\n\tpadding: var(--mol_gap_text);\n\tborder-radius: var(--mol_gap_round);\n\tdisplay: block;\n}\n\n[mol_status]:not([mol_view_error=\"Promise\"]) {\n\tcolor: var(--mol_theme_focus);\n}\n\n[mol_status]:not([mol_view_error=\"Promise\"]):empty {\n\tdisplay: none;\n}\n");
+    $mol_style_attach("mol/status/status.view.css", "[mol_status] {\n\tpadding: var(--mol_gap_text);\n\tborder-radius: var(--mol_gap_round);\n\tdisplay: block;\n\tflex-shrink: 1;\n\tword-wrap: break-word;\n}\n\n[mol_status]:not([mol_view_error=\"Promise\"]) {\n\tcolor: var(--mol_theme_focus);\n}\n\n[mol_status]:not([mol_view_error=\"Promise\"]):empty {\n\tdisplay: none;\n}\n");
 })($ || ($ = {}));
 
 ;
@@ -6303,6 +6345,9 @@ var $;
 		keydown(next){
 			if(next !== undefined) return next;
 			return null;
+		}
+		form_invalid(){
+			return (this.$.$mol_locale.text("$mol_form_form_invalid"));
 		}
 		form_fields(){
 			return [];
@@ -6371,8 +6416,8 @@ var $;
 		message_done(){
 			return (this.$.$mol_locale.text("$mol_form_message_done"));
 		}
-		message_invalid(){
-			return (this.$.$mol_locale.text("$mol_form_message_invalid"));
+		errors(){
+			return {"Form invalid": (this.form_invalid())};
 		}
 		rows(){
 			return [(this.Body()), (this.Foot())];
@@ -6387,6 +6432,13 @@ var $;
 	($mol_mem(($.$mol_form.prototype), "Foot"));
 	($mol_mem(($.$mol_form.prototype), "save"));
 
+
+;
+"use strict";
+var $;
+(function ($) {
+    $mol_style_attach("mol/form/form.view.css", "[mol_form] {\r\n\tgap: var(--mol_gap_block);\r\n}\r\n\r\n[mol_form_body] {\r\n\tgap: var(--mol_gap_block);\r\n}");
+})($ || ($ = {}));
 
 ;
 "use strict";
@@ -6414,7 +6466,7 @@ var $;
             }
             result(next) {
                 if (next instanceof Error)
-                    next = next.message || this.message_invalid();
+                    next = this.errors()[next.message] || next.message || this.form_invalid();
                 return next ?? '';
             }
             buttons() {
@@ -6426,7 +6478,7 @@ var $;
             submit(next) {
                 try {
                     if (!this.submit_allowed()) {
-                        throw new Error(this.message_invalid());
+                        throw new Error('Form invalid');
                     }
                     this.save(next);
                 }
@@ -6458,13 +6510,6 @@ var $;
         ], $mol_form.prototype, "submit", null);
         $$.$mol_form = $mol_form;
     })($$ = $.$$ || ($.$$ = {}));
-})($ || ($ = {}));
-
-;
-"use strict";
-var $;
-(function ($) {
-    $mol_style_attach("mol/form/form.view.css", "[mol_form] {\r\n\tgap: var(--mol_gap_block);\r\n}\r\n\r\n[mol_form_body] {\r\n\tgap: var(--mol_gap_block);\r\n}");
 })($ || ($ = {}));
 
 ;
@@ -6761,6 +6806,7 @@ var $;
             Body_content: {
                 padding: $mol_gap.block,
                 minHeight: 0,
+                minWidth: 0,
                 flex: {
                     direction: 'column',
                     shrink: 1,
@@ -11352,16 +11398,16 @@ var $;
             $mol_assert_unique([1], [2], [3]);
         },
         'two must be alike'() {
-            $mol_assert_like([3], [3]);
+            $mol_assert_equal([3], [3]);
         },
         'three must be alike'() {
-            $mol_assert_like([3], [3], [3]);
+            $mol_assert_equal([3], [3], [3]);
         },
         'two object must be alike'() {
-            $mol_assert_like({ a: 1 }, { a: 1 });
+            $mol_assert_equal({ a: 1 }, { a: 1 });
         },
         'three object must be alike'() {
-            $mol_assert_like({ a: 1 }, { a: 1 }, { a: 1 });
+            $mol_assert_equal({ a: 1 }, { a: 1 }, { a: 1 });
         },
     });
 })($ || ($ = {}));
@@ -11768,7 +11814,7 @@ var $;
 ;
 "use strict";
 var $;
-(function ($) {
+(function ($_1) {
     $mol_test({
         'init with overload'() {
             class X extends $mol_object {
@@ -11780,6 +11826,13 @@ var $;
                 foo: () => 2,
             });
             $mol_assert_equal(x.foo(), 2);
+        },
+        'Context in instance inherits from class'($) {
+            const custom = $.$mol_ambient({});
+            class X extends $.$mol_object {
+                static $ = custom;
+            }
+            $mol_assert_equal(new X().$, custom);
         },
     });
 })($ || ($ = {}));
@@ -12071,7 +12124,7 @@ var $;
             }
             await $mol_wire_async(A).a();
             $mol_assert_equal(A.instances.length, 2);
-            $mol_assert_equal(A.instances[0] instanceof A);
+            $mol_assert_equal(A.instances[0] instanceof A, true);
             $mol_assert_equal(A.instances[0], A.instances[1]);
         }
     });
@@ -13600,10 +13653,23 @@ var $;
 var $;
 (function ($) {
     $mol_test({
-        'encode utf8 string'() {
-            const str = 'Hello, ΧΨΩЫ';
-            const encoded = new Uint8Array([72, 101, 108, 108, 111, 44, 32, 206, 167, 206, 168, 206, 169, 208, 171]);
-            $mol_assert_like($mol_charset_encode(str), encoded);
+        'encode empty'() {
+            $mol_assert_equal($mol_charset_encode(''), new Uint8Array([]));
+        },
+        'encode 1 octet'() {
+            $mol_assert_equal($mol_charset_encode('F'), new Uint8Array([0x46]));
+        },
+        'encode 2 octet'() {
+            $mol_assert_equal($mol_charset_encode('Б'), new Uint8Array([0xd0, 0x91]));
+        },
+        'encode 3 octet'() {
+            $mol_assert_equal($mol_charset_encode('ह'), new Uint8Array([0xe0, 0xa4, 0xb9]));
+        },
+        'encode 4 octet'() {
+            $mol_assert_equal($mol_charset_encode('𐍈'), new Uint8Array([0xf0, 0x90, 0x8d, 0x88]));
+        },
+        'encode surrogate pair'() {
+            $mol_assert_equal($mol_charset_encode('😀'), new Uint8Array([0xf0, 0x9f, 0x98, 0x80]));
         },
     });
 })($ || ($ = {}));

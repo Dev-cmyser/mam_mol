@@ -156,7 +156,7 @@ var $node = new Proxy({ require }, {
                 const module = cache.get(name);
                 if (module)
                     return module;
-                throw import(name).then(module => cache.set(name, module));
+                throw Object.assign(import(name).then(module => cache.set(name, module)), { cause: error });
             }
             $.$mol_fail_log(error);
             return null;
@@ -372,7 +372,7 @@ var $;
             if (this[$mol_ambient_ref])
                 return this[$mol_ambient_ref];
             const owner = $mol_owning_get(this);
-            return this[$mol_ambient_ref] = owner?.$ || $mol_object2.$;
+            return this[$mol_ambient_ref] = owner?.$ || this.constructor.$ || $mol_object2.$;
         }
         set $(next) {
             if (this[$mol_ambient_ref])
@@ -3088,12 +3088,57 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    const TextEncoder = globalThis.TextEncoder ?? $node.util.TextEncoder;
-    const encoder = new TextEncoder();
-    function $mol_charset_encode(value) {
-        return encoder.encode(value);
+    let buf = new Uint8Array(2 ** 12);
+    function $mol_charset_encode(str) {
+        const capacity = str.length * 3;
+        if (buf.byteLength < capacity)
+            buf = new Uint8Array(capacity);
+        return buf.slice(0, $mol_charset_encode_to(str, buf));
     }
     $.$mol_charset_encode = $mol_charset_encode;
+    function $mol_charset_encode_to(str, buf, from = 0) {
+        let pos = from;
+        for (let i = 0; i < str.length; i++) {
+            let code = str.charCodeAt(i);
+            if (code < 0x80) {
+                buf[pos++] = code;
+            }
+            else if (code < 0x800) {
+                buf[pos++] = 0xc0 | (code >> 6);
+                buf[pos++] = 0x80 | (code & 0x3f);
+            }
+            else if (code < 0xd800 || code >= 0xe000) {
+                buf[pos++] = 0xe0 | (code >> 12);
+                buf[pos++] = 0x80 | ((code >> 6) & 0x3f);
+                buf[pos++] = 0x80 | (code & 0x3f);
+            }
+            else {
+                const point = ((code - 0xd800) << 10) + str.charCodeAt(++i) + 0x2400;
+                buf[pos++] = 0xf0 | (point >> 18);
+                buf[pos++] = 0x80 | ((point >> 12) & 0x3f);
+                buf[pos++] = 0x80 | ((point >> 6) & 0x3f);
+                buf[pos++] = 0x80 | (point & 0x3f);
+            }
+        }
+        return pos - from;
+    }
+    $.$mol_charset_encode_to = $mol_charset_encode_to;
+    function $mol_charset_encode_size(str) {
+        let size = 0;
+        for (let i = 0; i < str.length; i++) {
+            let code = str.charCodeAt(i);
+            if (code < 0x80)
+                size += 1;
+            else if (code < 0x800)
+                size += 2;
+            else if (code < 0xd800 || code >= 0xe000)
+                size += 3;
+            else
+                size += 4;
+        }
+        return size;
+    }
+    $.$mol_charset_encode_size = $mol_charset_encode_size;
 })($ || ($ = {}));
 
 ;
@@ -4528,7 +4573,7 @@ var $;
             }
             return names;
         }
-        theme(next = null) {
+        theme(next) {
             return next;
         }
         attr_static() {
@@ -4539,7 +4584,7 @@ var $;
         }
         attr() {
             return {
-                mol_theme: this.theme() ?? undefined,
+                mol_theme: this.theme(),
             };
         }
         style() {
@@ -4674,9 +4719,6 @@ var $;
     __decorate([
         $mol_memo.method
     ], $mol_view.prototype, "view_names", null);
-    __decorate([
-        $mol_mem
-    ], $mol_view.prototype, "theme", null);
     __decorate([
         $mol_mem
     ], $mol_view.prototype, "event_async", null);
@@ -5209,6 +5251,7 @@ var $;
             Body_content: {
                 padding: $mol_gap.block,
                 minHeight: 0,
+                minWidth: 0,
                 flex: {
                     direction: 'column',
                     shrink: 1,
@@ -8573,6 +8616,49 @@ var $;
 })($ || ($ = {}));
 
 ;
+	($.$mol_embed_vklive) = class $mol_embed_vklive extends ($.$mol_embed_service) {};
+
+
+;
+"use strict";
+
+;
+"use strict";
+var $;
+(function ($) {
+    var $$;
+    (function ($$) {
+        class $mol_embed_vklive extends $.$mol_embed_vklive {
+            video_embed() {
+                return `https://live.vkvideo.ru/app/embed/${this.channel_id()}/${this.video_id()}`;
+            }
+            channel_id() {
+                return this.uri().match(/^https:\/\/live\.vkvideo\.ru\/([^\/&?#]+)/)?.[1] ?? '';
+            }
+            video_id() {
+                return this.uri().match(/^https:\/\/live\.vkvideo\.ru\/[^\/&?#]+\/record\/([^\/&?#]+)/)?.[1] ?? '';
+            }
+            video_preview() {
+                return `https://images.live.vkvideo.ru/public_video_stream/record/${this.video_id()}/preview`;
+            }
+        }
+        __decorate([
+            $mol_mem
+        ], $mol_embed_vklive.prototype, "video_embed", null);
+        __decorate([
+            $mol_mem
+        ], $mol_embed_vklive.prototype, "channel_id", null);
+        __decorate([
+            $mol_mem
+        ], $mol_embed_vklive.prototype, "video_id", null);
+        __decorate([
+            $mol_mem
+        ], $mol_embed_vklive.prototype, "video_preview", null);
+        $$.$mol_embed_vklive = $mol_embed_vklive;
+    })($$ = $.$$ || ($.$$ = {}));
+})($ || ($ = {}));
+
+;
 	($.$mol_embed_any) = class $mol_embed_any extends ($.$mol_view) {
 		title(){
 			return "";
@@ -8604,11 +8690,18 @@ var $;
 			(obj.uri) = () => ((this.uri()));
 			return obj;
 		}
+		Vklive(){
+			const obj = new this.$.$mol_embed_vklive();
+			(obj.title) = () => ((this.title()));
+			(obj.uri) = () => ((this.uri()));
+			return obj;
+		}
 	};
 	($mol_mem(($.$mol_embed_any.prototype), "Image"));
 	($mol_mem(($.$mol_embed_any.prototype), "Object"));
 	($mol_mem(($.$mol_embed_any.prototype), "Youtube"));
 	($mol_mem(($.$mol_embed_any.prototype), "Rutube"));
+	($mol_mem(($.$mol_embed_any.prototype), "Vklive"));
 
 
 ;
@@ -8632,6 +8725,8 @@ var $;
                         return 'youtube';
                     if (/^https:\/\/rutube\.ru\//.test(uri))
                         return 'rutube';
+                    if (/^https:\/\/live\.vkvideo\.ru\//.test(uri))
+                        return 'vklive';
                 }
                 catch (error) {
                     $mol_fail_log(error);
@@ -8644,6 +8739,7 @@ var $;
                     case 'image': return [this.Image()];
                     case 'youtube': return [this.Youtube()];
                     case 'rutube': return [this.Rutube()];
+                    case 'vklive': return [this.Vklive()];
                     default: return [this.Object()];
                 }
             }
