@@ -224,7 +224,6 @@
     "$mol_dom_parse"
   ],
   "dependencies": {
-    "internal": "*",
     "jsdom": "*"
   }
 }

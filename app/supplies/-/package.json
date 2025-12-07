@@ -218,7 +218,6 @@
     "$mol_app_supplies_position"
   ],
   "dependencies": {
-    "internal": "*",
     "jsdom": "*"
   }
 }
