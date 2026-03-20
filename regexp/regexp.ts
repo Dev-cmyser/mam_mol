@@ -160,6 +160,20 @@ namespace $ {
 		get native() {
 			return new RegExp( this.source, this.flags )
 		}
+		
+		/** Makes regexp that greedy repeats this pattern with delimiter */
+		static separated<
+			Chunk extends $mol_regexp_source,
+			Sep extends $mol_regexp_source,
+		>(
+			chunk: Chunk,
+			sep: Sep,
+		) {
+			return $mol_regexp.from([
+				$mol_regexp.repeat_greedy([ [chunk], sep ], 0),
+				chunk,
+			])
+		}
 
 		/** Makes regexp that non-greedy repeats this pattern from min to max count */
 		static repeat<
@@ -217,6 +231,7 @@ namespace $ {
 			Sources extends readonly $mol_regexp_source[]
 		>(
 			sources : Sources ,
+			flags : string = 'gsu',
 		) {
 			
 			const groups = [] as string[]
@@ -232,7 +247,7 @@ namespace $ {
 			
 			return new $mol_regexp< $mol_regexp_groups< Sources[number] > >(
 				`(?:${ chunks.join('|') })` ,
-				'' ,
+				flags ,
 				groups as any[] ,
 			)
 			

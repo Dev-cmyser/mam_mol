@@ -2,8 +2,9 @@ namespace $ {
 	
 	setTimeout( ()=> $mol_wire_async( $mol_build ).start( process.argv.slice( 2 ) ) )
 
+	
+
 	export class $mol_build extends $mol_object {
-		
 		@ $mol_mem_key
 		static root( [ root, paths ] : [root: string, paths: readonly string[] ] ) {
 			this.$.$mol_file.base = root
@@ -44,15 +45,13 @@ namespace $ {
 					}
 					process.exit(0)
 				} catch( error: any ) {
-					if( $mol_fail_catch( error ) ) {
-						this.$.$mol_log3_fail({
-							place: '$mol_build_start' , 
-							message: error.message,
-							trace: error.stack,
-						})
-					}
-
-					process.exit(1)
+					if( $mol_promise_like( error ) ) $mol_fail_hidden( error )
+					this.$.$mol_log3_fail({
+						place: '$mol_build_start' , 
+						message: error.message,
+						trace: error.stack,
+					})
+					process.exit(135)
 				}
 			} else {
 				Promise.resolve().then( ()=> {
@@ -79,7 +78,7 @@ namespace $ {
 
 				const res = this.$.$mol_file.unwatched(() => this.$.$mol_run.spawn( { command: step.text(), dir } ), dir )
 					.stdout.toString().trim()
-				if( step.type ) content += `let ${ step.type } = ${ JSON.stringify( res ) }`
+				if( step.type ) content += `namespace $ { export let ${ step.type } = ${ JSON.stringify( res ) } }`
 
 			}
 
@@ -334,7 +333,7 @@ namespace $ {
 				}
 				
 				const node_types = $mol_file.absolute( path ).resolve( `-node/deps.d.ts` )
-				node_types.text( 'interface $node {\n ' + types.join( '\n' ) + '\n}' )
+				node_types.text( '// @ts-nocheck\ninterface $node {\n ' + types.join( '\n' ) + '\n}' )
 				sources.push( node_types )
 			}
 
@@ -397,7 +396,6 @@ namespace $ {
 						$mol_file.relative( path ).text( data, 'virt' )
 					},
 					setTimeout : ( cb : any )=> {
-						// console.log('setTimeout' )
 						run = cb
 					} ,
 					watchFile : (path:string, cb:(path:string,kind:number)=>any )=> {
@@ -407,7 +405,7 @@ namespace $ {
 					},
 				},
 				
-				$node.typescript.createSemanticDiagnosticsBuilderProgram,
+				$node.typescript.createEmitAndSemanticDiagnosticsBuilderProgram,
 
 				( diagnostic )=> {
 
@@ -418,7 +416,6 @@ namespace $ {
 							getCanonicalFileName : ( path : string )=> path.toLowerCase() ,
 							getNewLine : ()=> '\n' ,
 						})
-						// console.log('XXX', error )
 						this.js_error( diagnostic.file.getSourceFile().fileName , error )
 						
 					} else {
@@ -659,6 +656,7 @@ namespace $ {
 			this.bundle([ path , 'web.js' ])
 			this.bundle([ path , 'web.test.js' ])
 			this.bundle([ path , 'web.test.html' ])
+			this.bundle([ path , 'web.baza' ])
 			this.bundle([ path , 'web.view.tree' ])
 			this.bundle([ path , 'web.meta.tree' ])
 			this.bundle([ path , 'web.locale=en.json' ])
@@ -676,6 +674,7 @@ namespace $ {
 			this.bundle([ path , 'node.deps.json' ])
 			this.bundle([ path , 'node.js' ])
 			this.bundle([ path , 'node.test.js' ])
+			this.bundle([ path , 'node.baza' ])
 			this.bundle([ path , 'node.view.tree' ])
 			this.bundle([ path , 'node.meta.tree' ])
 			this.bundle([ path , 'node.locale=en.json' ])
@@ -700,6 +699,7 @@ namespace $ {
 			this.bundleAllNodeAudit(path)
 			
 			this.bundle([ path , 'package.json' ])
+			this.bundle([ path , 'manifest.json' ])
 			this.bundle([ path , 'readme.md' ])
 
 			this.bundleFiles( [ path , [ 'node' ] ] )
@@ -718,7 +718,7 @@ namespace $ {
 			var stages = [ 'test' , 'dev' ]
 			if( bundle ) {
 				
-				var [ bundle , tags , type , locale ] = /^(.*?)(?:\.(audit\.js|test\.js|test\.html|js|css|deps\.json|locale=(\w+)\.json))?$/.exec(
+				var [ bundle , tags , type , locale ] = /^(.*?)(?:\.(audit\.js|test\.js|test\.html|js|css|deps\.json|locale=(\w+)\.json|baza))?$/.exec(
 					bundle
 				)!
 				
@@ -759,6 +759,9 @@ namespace $ {
 					if( !type || type === 'view.tree' ) {
 						res = res.concat( this.bundleViewTree( { path , exclude , bundle : env } ) )
 					}
+					if( !type || type === 'baza' ) {
+						res = res.concat( this.bundleBaza( { path , exclude , bundle : env } ) )
+					}
 					if( !type || type === 'meta.tree' ) {
 						res = res.concat( this.bundleMetaTree( { path , exclude , bundle : env } ) )
 					}
@@ -780,6 +783,10 @@ namespace $ {
 				res = res.concat( this.bundlePackageJSON( [ path , [ 'web', 'test' ] ] ) )
 			}
 			
+			if( !bundle || bundle === 'manifest.json' ) {
+				res = res.concat( this.bundleManifestJSON( [ path , [ 'node' , 'test' ] ] ) )
+			}
+
 			if( !bundle || bundle === 'readme.md' ) {
 				res = res.concat( this.bundleReadmeMd( [ path , [ 'web' ] ] ) )
 			}
@@ -1100,6 +1107,25 @@ namespace $ {
 		}
 		
 		@ $mol_mem_key
+		bundleBaza( { path , exclude , bundle } : { path : string , exclude? : readonly string[] , bundle : string } ) : $mol_file[] {
+			
+			const start = this.now()
+			const pack = $mol_file.absolute( path )
+			
+			const target = pack.resolve( `-/${bundle}.baza` )
+			
+			const sources = this.sourcesAll([ path , exclude ])
+				.filter( src => /baza$/.test( src.ext() ) )
+			if( sources.length === 0 ) return []
+			
+			target.buffer( new Uint8Array( sources.flatMap( src => [ ... src.buffer() ] ) ) )
+			
+			this.logBundle( target , Date.now() - start )
+			return [ target ]
+			
+		}
+		
+		@ $mol_mem_key
 		bundleMetaTree( { path , exclude , bundle } : { path : string , exclude? : readonly string[] , bundle : string } ) : $mol_file[] {
 			const start = this.now()
 			var pack = $mol_file.absolute( path )
@@ -1242,7 +1268,9 @@ namespace $ {
 			json.version = version.join( '.' )
 
 			for( let dep of this.nodeDeps([ path , exclude ]).keys() ) {
-				if( require('module').builtinModules.includes(dep) || dep.startsWith('node:')) continue
+
+				if( $node_internal_check(dep) ) continue
+				if( dep === 'internal' ) continue // @TODO: Prevent `internal` deps from `node:internal`.
 				json.dependencies[ dep ] ??= `*`
 			}
 			
@@ -1255,6 +1283,40 @@ namespace $ {
 			
 			this.logBundle( target , Date.now() - start )
 			
+			return [ target ]
+		}
+
+		@ $mol_mem_key
+		bundleManifestJSON( [ path , exclude ] : [ path : string , exclude? : readonly string[] ] ) : $mol_file[] {
+
+			var pack = $mol_file.absolute( path )
+
+			if( this.sourcesAll( [ path , exclude ] ).length === 0 ) return []
+
+			const start = this.now()
+			var target = pack.resolve( `-/manifest.json` )
+			let name = pack.relate( this.root() ).replace( /\//g , '_' )
+
+			const json = {
+				name ,
+				short_name : name ,
+				description : '' ,
+				id : name ,
+				start_url : '.' ,
+				display : 'standalone' as string ,
+				background_color : '#000000' ,
+				theme_color : '#000000' ,
+			}
+
+			const source = pack.resolve( `manifest.json` )
+			if( source.exists() ) {
+				Object.assign( json , JSON.parse( source.text() ) )
+			}
+
+			target.text( JSON.stringify( json , null , '\t' ) )
+
+			this.logBundle( target , Date.now() - start )
+
 			return [ target ]
 		}
 		
@@ -1552,6 +1614,7 @@ namespace $ {
 				
 				line.replace(
 					/\b(?:require|import)\(\s*['"]([^"'()]*?)['"]\s*\)/ig , ( str , path )=> {
+						if ($node_internal_check(path)) return str
 						path = path.replace( /(\/[^\/.]+)$/ , '$1.js' ).replace( /\/$/, '/index.js' )
 						if( path[0] === '.' ) path = '../' + path
 						$mol_build_depsMerge( depends , { [ path ] : priority } )
@@ -1590,6 +1653,7 @@ namespace $ {
 				
 				line.replace(
 					/\b(?:require|import)\(\s*['"]([^"'()]*?)['"]\s*\)/ig , ( str , path )=> {
+						if ($node_internal_check(path)) return str
 						$mol_build_depsMerge( depends , { [ path ] : priority } )
 						return str
 					}

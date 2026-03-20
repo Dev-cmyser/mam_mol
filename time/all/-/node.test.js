@@ -106,6 +106,11 @@ var $;
                 }
                 throw new Error(`Can not parse time duration (${config})`);
             }
+            if (config instanceof Array) {
+                ;
+                [this.year, this.month, this.day, this.hour, this.minute, this.second] = config;
+                return;
+            }
             this.year = config.year || 0;
             this.month = config.month || 0;
             this.day = config.day || 0;
@@ -124,11 +129,11 @@ var $;
             let minute = this.minute ?? 0;
             let hour = this.hour ?? 0;
             let day = this.day ?? 0;
-            minute += Math.floor(second / 60);
+            minute += Math.trunc(second / 60);
             second = second % 60;
-            hour += Math.floor(minute / 60);
+            hour += Math.trunc(minute / 60);
             minute = minute % 60;
-            day += Math.floor(hour / 24);
+            day += Math.trunc(hour / 24);
             hour = hour % 24;
             return new $mol_time_duration({
                 year: this.year,
@@ -172,6 +177,9 @@ var $;
         toJSON() { return this.toString(); }
         toString(pattern = 'P#Y#M#DT#h#m#s') {
             return super.toString(pattern);
+        }
+        toArray() {
+            return [this.year, this.month, this.day, this.hour, this.minute, this.second];
         }
         [Symbol.toPrimitive](mode) {
             return mode === 'number' ? this.valueOf() : this.toString();
@@ -537,11 +545,14 @@ var $;
                 this.hour = config.getHours();
                 this.minute = config.getMinutes();
                 this.second = config.getSeconds() + config.getMilliseconds() / 1000;
-                const offset = -config.getTimezoneOffset();
-                this.offset = new $mol_time_duration({
-                    hour: (offset < 0) ? Math.ceil(offset / 60) : Math.floor(offset / 60),
-                    minute: offset % 60
-                });
+                this.offset = new $mol_time_duration({ minute: -config.getTimezoneOffset() });
+                return;
+            }
+            if (config instanceof Array) {
+                ;
+                [this.year, this.month, this.day, this.hour, this.minute, this.second] = config;
+                if (config[6] !== undefined)
+                    this.offset = new $mol_time_duration(config[6] * 60_000);
                 return;
             }
             this.year = config.year;
@@ -653,6 +664,9 @@ var $;
         toJSON() { return this.toString(); }
         toString(pattern = 'YYYY-MM-DDThh:mm:ss.sssZ') {
             return super.toString(pattern);
+        }
+        toArray() {
+            return [this.year, this.month, this.day, this.hour, this.minute, this.second, this.offset?.count('PT1m')];
         }
         [Symbol.toPrimitive](mode) {
             return mode === 'number' ? this.valueOf() : this.toString();
@@ -865,7 +879,7 @@ var $;
                 return millisecond.slice(2);
             },
             'Z': (moment) => {
-                const offset = moment.offset;
+                const offset = moment.offset?.normal;
                 if (!offset)
                     return '';
                 let hour = offset.hour;
@@ -874,7 +888,7 @@ var $;
                     sign = '-';
                     hour = -hour;
                 }
-                return sign + String(100 + hour).slice(1) + ':' + String(100 + offset.minute).slice(1);
+                return sign + hour.toString().padStart(2, '0') + ':' + offset.minute.toString().padStart(2, '0');
             }
         };
     }
@@ -1353,6 +1367,16 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    $.$mol_key_handle = Symbol.for('$mol_key_handle');
+    $.$mol_key_store = new WeakMap();
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
+    if (!Symbol.dispose)
+        Symbol.dispose = Symbol('Symbol.dispose');
     class $mol_object2 {
         static $ = $;
         [Symbol.toStringTag];
@@ -1383,8 +1407,14 @@ var $;
         static toJSON() {
             return this.toString();
         }
+        static [$mol_key_handle]() {
+            return this.toString();
+        }
         destructor() { }
         static destructor() { }
+        [Symbol.dispose]() {
+            this.destructor();
+        }
         toString() {
             return this[Symbol.toStringTag] || this.constructor.name + '<>';
         }
@@ -2252,7 +2282,7 @@ var $;
     function $mol_log3_node_make(level, output, type, color) {
         return function $mol_log3_logger(event) {
             if (!event.time)
-                event = { time: new Date().toISOString(), ...event };
+                event = { ...event, time: new Date().toISOString() };
             let tree = this.$mol_tree2_from_json(event);
             tree = tree.struct(type, tree.kids);
             let str = color(tree.toString());
@@ -3810,7 +3840,7 @@ var $;
         finally {
             $.$mol_fail = fail;
         }
-        $mol_fail(new Error('Not failed'));
+        $mol_fail(new Error('Not failed', { cause: { expect: ErrorRight } }));
     }
     $.$mol_assert_fail = $mol_assert_fail;
     function $mol_assert_like(...args) {
@@ -3832,8 +3862,6 @@ var $;
     function $mol_assert_equal(...args) {
         for (let i = 1; i < args.length; ++i) {
             if ($mol_compare_deep(args[0], args[i]))
-                continue;
-            if (args[0] instanceof $mol_dom_context.Element && args[i] instanceof $mol_dom_context.Element && args[0].outerHTML === args[i].outerHTML)
                 continue;
             return $mol_fail(new Error(`Equality assertion failure`, { cause: { 0: args[0], [i]: args[i] } }));
         }
@@ -4422,6 +4450,53 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    function $mol_array_chunks(array, rule) {
+        const br = typeof rule === 'number' ? (_, i) => i % rule === 0 : rule;
+        let chunk = [];
+        const chunks = [];
+        for (let i = 0; i < array.length; ++i) {
+            const item = array[i];
+            if (br(item, i)) {
+                if (chunk.length)
+                    chunks.push(chunk);
+                chunk = [];
+            }
+            chunk.push(item);
+        }
+        if (chunk.length)
+            chunks.push(chunk);
+        return chunks;
+    }
+    $.$mol_array_chunks = $mol_array_chunks;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
+    $mol_test({
+        'empty array'() {
+            $mol_assert_equal($mol_array_chunks([], () => true), []);
+        },
+        'one chunk'() {
+            $mol_assert_equal($mol_array_chunks([1, 2, 3, 4, 5], () => false), [[1, 2, 3, 4, 5]]);
+        },
+        'fixed size chunk'() {
+            $mol_assert_equal($mol_array_chunks([1, 2, 3, 4, 5], 3), [[1, 2, 3], [4, 5]]);
+        },
+        'first empty chunk'() {
+            $mol_assert_equal($mol_array_chunks([1, 2, 3, 4, 5], (_, i) => i === 0), [[1, 2, 3, 4, 5]]);
+        },
+        'chunk for every item'() {
+            $mol_assert_equal($mol_array_chunks([1, 2, 3, 4, 5], () => true), [[1], [2], [3], [4], [5]]);
+        },
+    });
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     class $mol_error_syntax extends SyntaxError {
         reason;
         line;
@@ -4615,7 +4690,9 @@ var $;
         }
         if (ArrayBuffer.isView(json)) {
             const buf = new Uint8Array(json.buffer, json.byteOffset, json.byteLength);
-            return $mol_tree2.data(String.fromCharCode(...buf), [], span);
+            const codes = [...buf].map(b => b.toString(16).toUpperCase().padStart(2, '0'));
+            const str = $mol_array_chunks(codes, 8).map(c => c.join(' ')).join('\n');
+            return $mol_tree2.data(str, [], span);
         }
         if (json instanceof Date) {
             return new $mol_tree2('', json.toISOString(), [], span);
@@ -4654,7 +4731,7 @@ var $;
             $mol_assert_equal($mol_tree2_from_json([]).toString(), '/\n');
             $mol_assert_equal($mol_tree2_from_json([false, true]).toString(), '/\n\tfalse\n\ttrue\n');
             $mol_assert_equal($mol_tree2_from_json([0, 1, 2.3]).toString(), '/\n\t0\n\t1\n\t2.3\n');
-            $mol_assert_equal($mol_tree2_from_json(new Uint16Array([1, 10, 256])).toString(), '\\\x01\x00\n\\\x00\x00\x01\n');
+            $mol_assert_equal($mol_tree2_from_json(new Uint16Array([1, 10, 255, 256, 65535])).toString(), '\\01 00 0A 00 FF 00 00 01\n\\FF FF\n');
             $mol_assert_equal($mol_tree2_from_json(['', 'foo', 'bar\nbaz']).toString(), '/\n\t\\\n\t\\foo\n\t\\\n\t\t\\bar\n\t\t\\baz\n');
             $mol_assert_equal($mol_tree2_from_json({ 'foo': false, 'bar\nbaz': 'lol' }).toString(), '*\n\tfoo false\n\t\\\n\t\t\\bar\n\t\t\\baz\n\t\t\\lol\n');
         },
@@ -4665,15 +4742,15 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    const catched = new WeakMap();
+    const catched = new WeakSet();
     function $mol_fail_catch(error) {
         if (typeof error !== 'object')
             return false;
         if ($mol_promise_like(error))
             $mol_fail_hidden(error);
-        if (catched.get(error))
+        if (catched.has(error))
             return false;
-        catched.set(error, true);
+        catched.add(error);
         return true;
     }
     $.$mol_fail_catch = $mol_fail_catch;
@@ -4688,6 +4765,7 @@ var $;
             return handler();
         }
         catch (error) {
+            console.error(error);
             return error;
         }
     }
@@ -4753,6 +4831,7 @@ var $;
         },
         'normalization'() {
             $mol_assert_equal(new $mol_time_duration('P1Y2M3DT44h55m66s').normal.toString(), 'P1Y2M4DT20H56M6S');
+            $mol_assert_equal(new $mol_time_duration('P-1Y-2M-3DT-44h-55m-66s').normal.toString(), 'P-1Y-2M-4DT-20H-56M-6S');
         },
         'comparison'() {
             const iso = 'P1Y1M1DT1h1m1s';
@@ -4825,6 +4904,11 @@ var $;
         'comparison'() {
             const iso = '2021-01-02T03:04:05.678+09:10';
             $mol_assert_equal(new $mol_time_moment(iso), new $mol_time_moment(iso));
+        },
+        'array keeps zero offset'() {
+            const moment = new $mol_time_moment('2026-01-25T16:37:36.129+00:00');
+            const restored = new $mol_time_moment(moment.toArray());
+            $mol_assert_equal(restored.offset?.count('PT1m'), 0);
         },
     });
 })($ || ($ = {}));

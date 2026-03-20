@@ -102,6 +102,11 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    const $mol_key_handle: unique symbol;
+    const $mol_key_store: WeakMap<object, string>;
+}
+
+declare namespace $ {
     class $mol_object2 {
         static $: $;
         [Symbol.toStringTag]: string;
@@ -112,8 +117,10 @@ declare namespace $ {
         static [Symbol.toPrimitive](): any;
         static toString(): any;
         static toJSON(): any;
+        static [$mol_key_handle](): any;
         destructor(): void;
         static destructor(): void;
+        [Symbol.dispose](): void;
         toString(): string;
     }
 }
@@ -394,6 +401,10 @@ declare namespace $ {
 
 declare namespace $ {
     function $mol_tree2_from_string(this: $, str: string, uri?: string): $mol_tree2;
+}
+
+declare namespace $ {
+    function $mol_array_chunks<Item>(array: readonly Item[], rule: number | ((item: Item, index: number) => boolean)): Item[][];
 }
 
 declare namespace $ {
@@ -761,7 +772,6 @@ declare namespace $ {
 }
 
 declare namespace $ {
-    const $mol_key_store: WeakMap<object, string>;
     function $mol_key<Value>(value: Value): string;
 }
 
@@ -894,6 +904,11 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    function $mol_wait_user_async(this: $): Promise<unknown>;
+    function $mol_wait_user(this: $): unknown;
+}
+
+declare namespace $ {
     class $mol_storage extends $mol_object2 {
         static native(): StorageManager;
         static persisted(next?: boolean, cache?: 'cache'): boolean;
@@ -955,6 +970,10 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    function $mol_charset_buffer(size: number): Uint8Array<ArrayBuffer>;
+}
+
+declare namespace $ {
     function $mol_charset_encode(str: string): Uint8Array<ArrayBuffer>;
     function $mol_charset_encode_to(str: string, buf: Uint8Array<ArrayBuffer>, from?: number): number;
     function $mol_charset_encode_size(str: string): number;
@@ -974,6 +993,7 @@ declare namespace $ {
         }): number;
         read(): Uint8Array<ArrayBuffer>;
         truncate(size: number): void;
+        flush(): void;
         close(): void;
         destructor(): void;
     }
@@ -990,6 +1010,7 @@ declare namespace $ {
         }): number;
         truncate(size: number): void;
         read(): Uint8Array<ArrayBuffer>;
+        flush(): void;
         close(): void;
     }
 }
@@ -1119,7 +1140,7 @@ declare namespace $ {
 }
 
 declare namespace $ {
-    let $mol_gap: Record<"text" | "blur" | "block" | "space" | "round", $mol_style_func<"var", unknown>>;
+    let $mol_gap: Record<"text" | "blur" | "page" | "block" | "space" | "round" | "emoji", $mol_style_func<"var", unknown>>;
 }
 
 declare namespace $ {
@@ -1224,6 +1245,10 @@ declare namespace $ {
     function $mol_dom_render_events(el: Element, events: {
         [key: string]: (event: Event) => any;
     }, passive?: boolean): void;
+}
+
+declare namespace $ {
+    function $mol_error_message(this: $, error: unknown): string;
 }
 
 declare namespace $ {
@@ -1579,6 +1604,7 @@ declare namespace $ {
 		enabled( ): boolean
 		click( next?: any ): any
 		event_click( next?: any ): any
+		status( next?: readonly(any)[] ): readonly(any)[]
 		event( ): ({ 
 			click( next?: ReturnType< $mol_button['activate'] > ): ReturnType< $mol_button['activate'] >,
 			dblclick( next?: ReturnType< $mol_button['clicks'] > ): ReturnType< $mol_button['clicks'] >,
@@ -1599,7 +1625,6 @@ declare namespace $ {
 //# sourceMappingURL=button.view.tree.d.ts.map
 declare namespace $.$$ {
     class $mol_button extends $.$mol_button {
-        status(next?: any[]): any[];
         disabled(): boolean;
         event_activate(next: Event): void;
         event_key_press(event: KeyboardEvent): any;
@@ -1716,6 +1741,15 @@ declare namespace $.$$ {
 }
 
 declare namespace $ {
+}
+
+declare namespace $ {
+    class $mol_dom_event<EventType extends Event> extends $mol_object {
+        readonly native: EventType;
+        constructor(native: EventType);
+        prevented(next?: boolean): boolean;
+        static wrap<EventType extends Event>(event: EventType): $mol_dom_event<EventType>;
+    }
 }
 
 declare namespace $ {

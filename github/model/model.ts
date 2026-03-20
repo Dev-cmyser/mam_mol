@@ -60,72 +60,62 @@ namespace $ {
 	].map( str => `github_pat_${str}` )
 	
 	export const $mol_github_model_polyglots = [
-		'xai/grok-3', // Default model
-		'xai/grok-3-mini', // Lightweight reasoning model
-		// 'openai/gpt-5', // Logic-heavy and multi-step tasks
-		// 'openai/gpt-5-chat', // Advanced, natural, multimodal conversations
-		'openai/gpt-5-mini', // Lightweight for cost-sensitive apps
-		'openai/gpt-5-nano', // Optimized for speed and low latency
 		// 'openai/gpt-4.1', // 50/D too slow
-		// 'openai/gpt-4.1-mini', // 150/D
-		// 'openai/gpt-4.1-nano', // 150/D bad resp
 		// 'openai/gpt-4o', // 50/D bad resp
+		'openai/gpt-4.1-mini', // 150/D
 		// 'openai/gpt-4o-mini', // 150/D bad resp
-		// 'meta-llama/Llama-4-Scout-17B-16E-Instruct', // Multi-document summarization
-		// 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8', // Image understanding, creative writing
-		// 'meta-llama/Llama-3.3-70B-Instruct', // Enhanced reasoning, math
-		// 'meta-llama/Meta-Llama-3.1-405B-Instruct', // Multilingual dialogue
-		// 'meta-llama/Llama-3.2-90B-Vision-Instruct', // Advanced image reasoning
-		// 'meta-llama/Llama-3.2-11B-Vision-Instruct', // Image reasoning on high-res
-		// 'meta-llama/Meta-Llama-3.1-8B-Instruct', // Multilingual dialogue
-		// 'meta-llama/Meta-Llama-3-8B-Instruct', // Dialogue and text generation
-		// 'deepseek/deepseek-r1-0528', // Enhanced reasoning, function calling
-		// 'deepseek/deepseek-v3-0324', // Reasoning, function calling, code generation
-		// 'deepseek/deepseek-r1', // Reasoning tasks
-		// 'microsoft/phi-4', // Low latency scenarios
-		// 'microsoft/phi-4-reasoning', // Reasoning model
-		// 'microsoft/phi-4-multimodal-instruct', // Text, audio, image inputs
-		// 'microsoft/phi-4-mini-reasoning', // Math reasoning
-		// 'microsoft/phi-4-mini-instruct', // Reasoning, math, coding, function-calling
-		// 'cohere/command-r-plus-08-2024', // RAG-optimized for enterprise
-		// 'cohere/command-r-08-2024', // RAG and Tool Use
-		// 'cohere/command-a', // Agentic and multilingual
-		// 'mistralai/mistral-small-3.1', // Multimodal, 128k context
-		// 'mistralai/mistral-medium-3-25.05', // Reasoning, knowledge, coding, vision
-		// 'ai21/jamba-1.5-large', // 256K context, function calling, structured output
+		// 'openai/gpt-4.1-nano', // 150/D bad resp
 	]
+	
+	const Text = $mol_data_record({
+		type: $mol_data_const( 'text' ),
+		text: $mol_data_string,
+	})
+	
+	const Image = $mol_data_record({
+		type: $mol_data_const( 'image_url' ),
+		image_url: $mol_data_record({
+			url: $mol_data_string,
+		}),
+	})
+	
+	const Content_item = $mol_data_variant( Text, Image )
+	const Content = $mol_data_variant(
+		$mol_data_string,
+		$mol_data_array( Content_item ),
+	)
 	
 	const System = $mol_data_record({
 		role: $mol_data_const( 'system' ),
-		content: $mol_data_string,
+		content: Content,
 	})
 	
 	const Assistant = $mol_data_record({
 		role: $mol_data_const( 'assistant' ),
-		content: $mol_data_nullable( $mol_data_string ),
-		tool_calls: $mol_data_optional( $mol_data_nullable( $mol_data_array( $mol_data_record({
+		content: $mol_data_nullable( Content ),
+		tool_calls: $mol_data_optional( $mol_data_array( $mol_data_record({
 			type: $mol_data_const( 'function' ),
 			id: $mol_data_string,
 			function: $mol_data_record({
 				name: $mol_data_string,
 				arguments: $mol_data_string,
 			}),
-		}) ) ) ),
+		}) ) ),
 	})
 	
 	const User = $mol_data_record({
 		role: $mol_data_const( 'user' ),
-		content: $mol_data_string,
+		content: Content,
 	})
 	
 	const Tool = $mol_data_record({
 		role: $mol_data_const( 'tool' ),
 		// name: $mol_data_string,
 		tool_call_id: $mol_data_string,
-		content: $mol_data_string,
+		content: Content,
 	})
 	
-	const Message = $mol_data_variant( Assistant, User, Tool )
+	const Message = $mol_data_variant( System, Assistant, User, Tool )
 	
 	const Resp = $mol_data_record({
 		choices: $mol_data_array( $mol_data_record({
@@ -159,6 +149,13 @@ namespace $ {
 	type Type = Obj<any> | List<any> | Primitive<any>
 	
 	
+	function bloat_content( val: any ): typeof Content_item.Value {
+		if( typeof val !== 'string' ) val = JSON.stringify( val )
+		else if( val.startsWith( 'data:' ) ) return { type: 'image_url', image_url: { url: val } }
+		return { type: 'text', text: val }
+	}
+	
+	
 	/**
 	 * Github hosted LLM API.
 	 */
@@ -189,6 +186,13 @@ namespace $ {
 		
 		// DYNAMIC STATE
 		
+		/** Actual system state */
+		@ $mol_mem
+		state( next?: readonly string[] ) {
+			$mol_wire_solid()
+			return next ?? []
+		}
+		
 		/** Additional model query params */
 		@ $mol_mem
 		params( next?: {}) {
@@ -214,6 +218,7 @@ namespace $ {
 				names: $mol_const( this.names() ),
 				rules: $mol_const( this.rules() ),
 				tools: $mol_const( this.tools() ),
+				state: ()=> this.state(),
 			})
 			
 			// dynamic state
@@ -225,7 +230,7 @@ namespace $ {
 		
 		/** One-shot stateless prompting */
 		@ $mol_action
-		shot( prompt: any, context?: any, params?: {} ) {
+		shot( prompt: any[], context?: any, params?: {} ) {
 			const fork = this.fork()
 			if( params ) fork.params({ ... this.params(), ... params })
 			if( context ) fork.tell( context )
@@ -235,12 +240,12 @@ namespace $ {
 		
 		/** Add user prompt */
 		@ $mol_action
-		ask( text: any ) {
+		ask( chunks: any[] ) {
 			this.history([
 				... this.history(),
 				{
 					role: "user",
-					content: JSON.stringify( text ),
+					content: chunks.map( bloat_content ),
 				}
 			])
 			return this
@@ -248,12 +253,12 @@ namespace $ {
 		
 		/** Add assistant context */
 		@ $mol_action
-		tell( text: any ) {
+		tell( chunks: any[] ) {
 			this.history([
 				... this.history(),
 				{
 					role: "assistant",
-					content: JSON.stringify( text ),
+					content: chunks.map( bloat_content ),
 				}
 			])
 			return this
@@ -261,7 +266,7 @@ namespace $ {
 		
 		/** Add tools answer */
 		@ $mol_action
-		answer( id: string, data: any ) {
+		answer( id: string, chunks: any[] ) {
 			
 			const history = this.history()
 			
@@ -273,7 +278,7 @@ namespace $ {
 				{
 					role: "tool",
 					tool_call_id: id,
-					content: JSON.stringify( data ),
+					content: chunks.map( bloat_content ),
 				},
 				... history.slice( index ),
 			])
@@ -291,6 +296,7 @@ namespace $ {
 				messages: [
 					{ role: 'system', content: this.rules() },
 					... this.history(),
+					{ role: 'system', content: this.state().map( bloat_content ) },
 				],
 				tools: [ ... this.tools() ].map( ([ name, info ])=> ({
 					type: "function",
@@ -338,19 +344,19 @@ namespace $ {
 					const resp = this.request( model, key )
 					const message = resp.choices[0].message
 					this.history([ ... history, message ])
-					return JSON.parse( message.content ?? 'null' )
+					if( typeof message.content === 'string' ) return JSON.parse( message.content )
+					return message.content
 				
 				} catch( error: any ) {
 
 					const resp = error.cause as $mol_fetch_response
 					if( !resp ) return $mol_fail_hidden( error )
 						
-					const code = typeof resp.code === 'function' ? resp.code() : resp.code
-					if( code === 429 ) continue // rate limit
+					if( resp.code() === 429 ) continue // rate limit
 					
-					if( code === 400 ) {
+					if( resp.code() === 400 ) {
 						const message = RespFail( resp.json() as any ).error.message
-						this.history([ ... history, { role: 'assistant', content: '📛 ' + message } ])
+						this.history([ ... history, { role: 'system', content: '📛 ' + message } ])
 						$mol_fail( new Error( message ) )
 					}
 					

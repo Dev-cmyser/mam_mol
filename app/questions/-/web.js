@@ -441,6 +441,16 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    $.$mol_key_handle = Symbol.for('$mol_key_handle');
+    $.$mol_key_store = new WeakMap();
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
+    if (!Symbol.dispose)
+        Symbol.dispose = Symbol('Symbol.dispose');
     class $mol_object2 {
         static $ = $;
         [Symbol.toStringTag];
@@ -471,8 +481,14 @@ var $;
         static toJSON() {
             return this.toString();
         }
+        static [$mol_key_handle]() {
+            return this.toString();
+        }
         destructor() { }
         static destructor() { }
+        [Symbol.dispose]() {
+            this.destructor();
+        }
         toString() {
             return this[Symbol.toStringTag] || this.constructor.name + '<>';
         }
@@ -1249,46 +1265,50 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $.$mol_key_store = new WeakMap();
     const TypedArray = Object.getPrototypeOf(Uint8Array);
     function $mol_key(value) {
-        if (typeof value === 'bigint')
-            return value.toString() + 'n';
-        if (typeof value === 'symbol')
-            return value.description;
-        if (!value)
-            return JSON.stringify(value);
-        if (typeof value !== 'object' && typeof value !== 'function')
-            return JSON.stringify(value);
-        return JSON.stringify(value, (field, value) => {
+        primitives: {
             if (typeof value === 'bigint')
                 return value.toString() + 'n';
             if (typeof value === 'symbol')
-                return value.description;
+                return `Symbol(${value.description})`;
             if (!value)
-                return value;
+                return JSON.stringify(value);
             if (typeof value !== 'object' && typeof value !== 'function')
-                return value;
-            if (Array.isArray(value))
-                return value;
-            const proto = Reflect.getPrototypeOf(value);
-            if (!proto)
-                return value;
-            if (Reflect.getPrototypeOf(proto) === null)
-                return value;
-            if ('toJSON' in value)
-                return value;
-            if (value instanceof RegExp)
-                return value.toString();
-            if (value instanceof TypedArray)
-                return [...value];
-            let key = $.$mol_key_store.get(value);
+                return JSON.stringify(value);
+        }
+        caching: {
+            let key = $mol_key_store.get(value);
             if (key)
                 return key;
-            key = $mol_guid();
-            $.$mol_key_store.set(value, key);
+        }
+        objects: {
+            if (value instanceof TypedArray) {
+                return `${value[Symbol.toStringTag]}([${[...value].map(v => $mol_key(v))}])`;
+            }
+            if (Array.isArray(value))
+                return `[${value.map(v => $mol_key(v))}]`;
+            if (value instanceof RegExp)
+                return value.toString();
+            if (value instanceof Date)
+                return `Date(${value.valueOf()})`;
+        }
+        structures: {
+            const proto = Reflect.getPrototypeOf(value);
+            if (!proto || !Reflect.getPrototypeOf(proto)) {
+                return `{${Object.entries(value).map(([k, v]) => JSON.stringify(k) + ':' + $mol_key(v))}}`;
+            }
+        }
+        handlers: {
+            if ($mol_key_handle in value) {
+                return value[$mol_key_handle]();
+            }
+        }
+        containers: {
+            const key = JSON.stringify('#' + $mol_guid());
+            $mol_key_store.set(value, key);
             return key;
-        });
+        }
     }
     $.$mol_key = $mol_key;
 })($ || ($ = {}));
@@ -1648,15 +1668,15 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    const catched = new WeakMap();
+    const catched = new WeakSet();
     function $mol_fail_catch(error) {
         if (typeof error !== 'object')
             return false;
         if ($mol_promise_like(error))
             $mol_fail_hidden(error);
-        if (catched.get(error))
+        if (catched.has(error))
             return false;
-        catched.set(error, true);
+        catched.add(error);
         return true;
     }
     $.$mol_fail_catch = $mol_fail_catch;
@@ -1666,10 +1686,26 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    function $mol_try(handler) {
+        try {
+            return handler();
+        }
+        catch (error) {
+            console.error(error);
+            return error;
+        }
+    }
+    $.$mol_try = $mol_try;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     let error;
     let result;
     let handler;
-    function $mol_try(handler2) {
+    function $mol_try_web(handler2) {
         handler = handler2;
         error = undefined;
         result = undefined;
@@ -1680,7 +1716,8 @@ var $;
         result = undefined;
         return error2 || result2;
     }
-    $.$mol_try = $mol_try;
+    $.$mol_try_web = $mol_try_web;
+    $.$mol_try = $mol_try_web;
     self.addEventListener('$mol_try', (event) => {
         result = handler();
     }, true);
@@ -1791,8 +1828,15 @@ var $;
                 (this.host ?? this.task)[this.field()] = null;
             }
             else {
-                ;
-                (this.host ?? this.task)[this.field()].delete($mol_key(this.args[0]));
+                const key = $mol_key(this.args[0]);
+                const map = (this.host ?? this.task)[this.field()];
+                if (!map.has(key))
+                    this.$.$mol_log3_warn({
+                        place: this,
+                        message: 'Absent key on destruction',
+                        hint: 'Check for $mol_key(key) is not changed',
+                    });
+                map.delete(key);
             }
         }
         put(next) {
@@ -2202,6 +2246,23 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    function $mol_wait_user_async() {
+        return new Promise(done => $mol_dom.addEventListener('click', function onclick() {
+            $mol_dom.removeEventListener('click', onclick);
+            done(null);
+        }));
+    }
+    $.$mol_wait_user_async = $mol_wait_user_async;
+    function $mol_wait_user() {
+        return this.$mol_wire_sync(this).$mol_wait_user_async();
+    }
+    $.$mol_wait_user = $mol_wait_user;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     class $mol_storage extends $mol_object2 {
         static native() {
             return this.$.$mol_dom_context.navigator.storage ?? {
@@ -2217,7 +2278,9 @@ var $;
                 return Boolean(next);
             const native = this.native();
             if (next && !$mol_mem_cached(() => this.persisted())) {
-                native.persist().then(actual => {
+                this.$.$mol_wait_user_async()
+                    .then(() => native.persist())
+                    .then(actual => {
                     setTimeout(() => this.persisted(actual, 'cache'), 5000);
                     if (actual)
                         this.$.$mol_log3_done({ place: `$mol_storage`, message: `Persist: Yes` });
@@ -2380,8 +2443,10 @@ var $;
 var $;
 (function ($) {
     $.$mol_gap = $mol_style_prop('mol_gap', [
+        'page',
         'block',
         'text',
+        'emoji',
         'round',
         'space',
         'blur',
@@ -2392,7 +2457,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $mol_style_attach("mol/gap/gap.css", ":root {\n\t--mol_gap_block: .75rem;\n\t--mol_gap_text: .5rem .75rem;\n\t--mol_gap_round: .25rem;\n\t--mol_gap_space: .25rem;\n\t--mol_gap_blur: .5rem;\n}\n");
+    $mol_style_attach("mol/gap/gap.css", ":root {\n\t--mol_gap_page: 3rem;\n\t--mol_gap_block: .75rem;\n\t--mol_gap_text: .5rem .75rem;\n\t--mol_gap_emoji: .5rem;\n\t--mol_gap_round: .25rem;\n\t--mol_gap_space: .25rem;\n\t--mol_gap_blur: .5rem;\n}\n");
 })($ || ($ = {}));
 
 ;
@@ -2975,6 +3040,16 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    function $mol_error_message(error) {
+        return String((error instanceof Error ? error.message : null) || error) || 'Unknown';
+    }
+    $.$mol_error_message = $mol_error_message;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     function $mol_dom_render_styles(el, styles) {
         for (let name in styles) {
             let val = styles[name];
@@ -3066,7 +3141,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $mol_style_attach("mol/view/view/view.css", "[mol_view] {\n\ttransition-property: height, width, min-height, min-width, max-width, max-height, transform, scale, translate, rotate;\n\ttransition-duration: .2s;\n\ttransition-timing-function: ease-out;\n\t-webkit-appearance: none;\n\tbox-sizing: border-box;\n\tdisplay: flex;\n\tflex-shrink: 0;\n\tcontain: style;\n\tscrollbar-color: var(--mol_theme_line) transparent;\n\tscrollbar-width: thin;\n}\t\n\n[mol_view]::selection {\n\tbackground: var(--mol_theme_line);\n}\t\n\n[mol_view]::-webkit-scrollbar {\n\twidth: .25rem;\n\theight: .25rem;\n}\n\n[mol_view]::-webkit-scrollbar-corner {\n\tbackground-color: var(--mol_theme_line);\n}\n\n[mol_view]::-webkit-scrollbar-track {\n\tbackground-color: transparent;\n}\n\n[mol_view]::-webkit-scrollbar-thumb {\n\tbackground-color: var(--mol_theme_line);\n\tborder-radius: var(--mol_gap_round);\n}\n\n[mol_view] > * {\n\tword-break: inherit;\n}\n\n[mol_view_root] {\n\tmargin: 0;\n\tpadding: 0;\n\twidth: 100%;\n\theight: 100%;\n\tbox-sizing: border-box;\n\tfont-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n\tfont-size: 1rem;\n\tline-height: 1.5rem;\n\t/* background: var(--mol_theme_back);\n\tcolor: var(--mol_theme_text); */\n\tcontain: unset; /** Fixes bg ignoring when applied to body on Chrome */\n\ttab-size: 4;\n\toverscroll-behavior: contain; /** Disable navigation gestures **/\n}\n\n@media print {\n\t[mol_view_root] {\n\t\theight: auto;\n\t}\n}\n[mol_view][mol_view_error]:not([mol_view_error=\"Promise\"], [mol_view_error=\"$mol_promise_blocker\"]) {\n\tbackground-image: repeating-linear-gradient(\n\t\t-45deg,\n\t\t#f92323,\n\t\t#f92323 .5rem,\n\t\t#ff3d3d .5rem,\n\t\t#ff3d3d 1.5rem\n\t);\n\tcolor: black;\n\talign-items: center;\n\tjustify-content: center;\n}\n\n@keyframes mol_view_wait {\n\tfrom {\n\t\topacity: .25;\n\t}\n\t20% {\n\t\topacity: .75;\n\t}\n\tto {\n\t\topacity: .25;\n\t}\n}\n\n:where([mol_view][mol_view_error=\"$mol_promise_blocker\"]),\n:where([mol_view][mol_view_error=\"Promise\"]) {\n\tbackground: var(--mol_theme_hover);\n}\n\n[mol_view][mol_view_error=\"Promise\"] {\n\tanimation: mol_view_wait 1s steps(20,end) infinite;\n}\n");
+    $mol_style_attach("mol/view/view/view.css", "@view-transition {\n\tnavigation: auto;\n}\n\n[mol_view] {\n\ttransition-property: height, width, min-height, min-width, max-width, max-height, transform, scale, translate, rotate;\n\ttransition-duration: .2s;\n\ttransition-timing-function: ease-out;\n\t-webkit-appearance: none;\n\tbox-sizing: border-box;\n\tdisplay: flex;\n\tflex-shrink: 0;\n\tcontain: style;\n\tscrollbar-color: var(--mol_theme_line) transparent;\n\tscrollbar-width: thin;\n}\t\n\n[mol_view]::selection {\n\tbackground: var(--mol_theme_line);\n}\t\n\n[mol_view]::-webkit-scrollbar {\n\twidth: .25rem;\n\theight: .25rem;\n}\n\n[mol_view]::-webkit-scrollbar-corner {\n\tbackground-color: var(--mol_theme_line);\n}\n\n[mol_view]::-webkit-scrollbar-track {\n\tbackground-color: transparent;\n}\n\n[mol_view]::-webkit-scrollbar-thumb {\n\tbackground-color: var(--mol_theme_line);\n\tborder-radius: var(--mol_gap_round);\n}\n\n[mol_view] > * {\n\tword-break: inherit;\n}\n\n[mol_view_root] {\n\tmargin: 0;\n\tpadding: 0;\n\twidth: 100%;\n\theight: 100%;\n\tbox-sizing: border-box;\n\tfont-family: system-ui, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n\tfont-size: 1rem;\n\tline-height: 1.5rem;\n\t/* background: var(--mol_theme_back);\n\tcolor: var(--mol_theme_text); */\n\tcontain: unset; /** Fixes bg ignoring when applied to body on Chrome */\n\ttab-size: 4;\n\t/*overscroll-behavior: contain; /** Disable navigation gestures **/\n}\n\n@media print {\n\t[mol_view_root] {\n\t\theight: auto;\n\t}\n}\n[mol_view][mol_view_error]:not([mol_view_error=\"Promise\"], [mol_view_error=\"$mol_promise_blocker\"]) {\n\tbackground-image: repeating-linear-gradient(\n\t\t-45deg,\n\t\t#f92323,\n\t\t#f92323 .5rem,\n\t\t#ff3d3d .5rem,\n\t\t#ff3d3d 1.5rem\n\t);\n\tcolor: black;\n\talign-items: center;\n\tjustify-content: center;\n}\n\n@keyframes mol_view_wait {\n\tfrom {\n\t\topacity: .25;\n\t}\n\t20% {\n\t\topacity: .75;\n\t}\n\tto {\n\t\topacity: .25;\n\t}\n}\n\n:where([mol_view][mol_view_error=\"$mol_promise_blocker\"]),\n:where([mol_view][mol_view_error=\"Promise\"]) {\n\tbackground: var(--mol_theme_hover);\n}\n\n[mol_view][mol_view_error=\"Promise\"] {\n\tanimation: mol_view_wait 1s steps(20,end) infinite;\n}\n");
 })($ || ($ = {}));
 
 ;
@@ -3260,8 +3335,8 @@ var $;
                 if ($mol_promise_like(error))
                     break render;
                 try {
-                    const message = error.message || error;
-                    node.innerText = message.replace(/^|$/mg, '\xA0\xA0');
+                    ;
+                    node.innerText = this.$.$mol_error_message(error).replace(/^|$/mg, '\xA0\xA0');
                 }
                 catch { }
             }
@@ -4106,10 +4181,20 @@ var $;
 var $;
 (function ($) {
     let buf = new Uint8Array(2 ** 12);
+    function $mol_charset_buffer(size) {
+        if (buf.byteLength < size)
+            buf = new Uint8Array(size);
+        return buf;
+    }
+    $.$mol_charset_buffer = $mol_charset_buffer;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     function $mol_charset_encode(str) {
-        const capacity = str.length * 3;
-        if (buf.byteLength < capacity)
-            buf = new Uint8Array(capacity);
+        const buf = $mol_charset_buffer(str.length * 3);
         return buf.slice(0, $mol_charset_encode_to(str, buf));
     }
     $.$mol_charset_encode = $mol_charset_encode;
@@ -4166,40 +4251,25 @@ var $;
         path() { return ''; }
         modes() { return []; }
         write(options) {
-            return 0;
+            throw new Error('Not implemented');
         }
         read() {
-            return new Uint8Array();
-        }
-        truncate(size) { }
-        close() { }
-        destructor() {
-            this.close();
-        }
-    }
-    $.$mol_file_transaction = $mol_file_transaction;
-})($ || ($ = {}));
-
-;
-"use strict";
-var $;
-(function ($) {
-    class $mol_file_transaction_web extends $mol_file_transaction {
-        write(options) {
             throw new Error('Not implemented');
         }
         truncate(size) {
             throw new Error('Not implemented');
         }
-        read() {
+        flush() {
             throw new Error('Not implemented');
         }
         close() {
             throw new Error('Not implemented');
         }
+        destructor() {
+            this.close();
+        }
     }
-    $.$mol_file_transaction_web = $mol_file_transaction_web;
-    $.$mol_file_transaction = $mol_file_transaction_web;
+    $.$mol_file_transaction = $mol_file_transaction;
 })($ || ($ = {}));
 
 ;
@@ -4610,6 +4680,93 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    function cause_serialize(cause) {
+        return JSON.stringify(cause, null, '  ')
+            .replace(/\(/, '<')
+            .replace(/\)/, ' >');
+    }
+    function frame_normalize(frame) {
+        return (typeof frame === 'string' ? frame : cause_serialize(frame))
+            .trim()
+            .replace(/at /gm, '   at ')
+            .replace(/^(?!    +at )(.*)/gm, '    at | $1 (#)');
+    }
+    class $mol_error_mix extends AggregateError {
+        cause;
+        name = $$.$mol_func_name(this.constructor).replace(/^\$/, '') + '_Error';
+        constructor(message, cause = {}, ...errors) {
+            super(errors, message, { cause });
+            this.cause = cause;
+            const desc = Object.getOwnPropertyDescriptor(this, 'stack');
+            const stack_get = () => desc?.get?.() ?? super.stack ?? desc?.value ?? this.message;
+            Object.defineProperty(this, 'stack', {
+                get: () => stack_get() + '\n' + [
+                    this.cause ?? 'no cause',
+                    ...this.errors.flatMap(e => [
+                        String(e.stack),
+                        ...e instanceof $mol_error_mix || !e.cause ? [] : [e.cause]
+                    ])
+                ].map(frame_normalize).join('\n')
+            });
+            Object.defineProperty(this, 'cause', {
+                get: () => cause
+            });
+        }
+        static [Symbol.toPrimitive]() {
+            return this.toString();
+        }
+        static toString() {
+            return $$.$mol_func_name(this);
+        }
+        static make(...params) {
+            return new this(...params);
+        }
+    }
+    $.$mol_error_mix = $mol_error_mix;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
+    function pass(data) {
+        return data;
+    }
+    function $mol_error_fence(task, fallback, loading = pass) {
+        try {
+            return task();
+        }
+        catch (error) {
+            let normalized;
+            try {
+                normalized = $mol_promise_like(error) ? loading(error) : fallback(error);
+            }
+            catch (sub_error) {
+                normalized = $mol_promise_like(sub_error) ? sub_error : new $mol_error_mix(sub_error.message, { error }, sub_error);
+            }
+            if (normalized instanceof Error || $mol_promise_like(normalized)) {
+                $mol_fail_hidden(normalized);
+            }
+            return normalized;
+        }
+    }
+    $.$mol_error_fence = $mol_error_fence;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
+    function $mol_error_enriched(cause, cb) {
+        return $mol_error_fence(cb, e => new $mol_error_mix(e.message, cause, e));
+    }
+    $.$mol_error_enriched = $mol_error_enriched;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     function $mol_dom_parse(text, type = 'application/xhtml+xml') {
         const parser = new $mol_dom_context.DOMParser();
         const doc = parser.parseFromString(text, type);
@@ -4658,13 +4815,13 @@ var $;
             return decoder.decode(buffer);
         }
         json() {
-            return $mol_wire_sync(this.native).json();
+            return $mol_error_enriched(this, () => $mol_wire_sync(this.native).json());
         }
         blob() {
-            return $mol_wire_sync(this.native).blob();
+            return $mol_error_enriched(this, () => $mol_wire_sync(this.native).blob());
         }
         buffer() {
-            return $mol_wire_sync(this.native).arrayBuffer();
+            return $mol_error_enriched(this, () => $mol_wire_sync(this.native).arrayBuffer());
         }
         xml() {
             return $mol_dom_parse(this.text(), 'application/xml');
@@ -5068,6 +5225,10 @@ var $;
 			if(next !== undefined) return next;
 			return null;
 		}
+		status(next){
+			if(next !== undefined) return next;
+			return [];
+		}
 		event(){
 			return {
 				...(super.event()), 
@@ -5099,6 +5260,7 @@ var $;
 	($mol_mem(($.$mol_button.prototype), "event_key_press"));
 	($mol_mem(($.$mol_button.prototype), "click"));
 	($mol_mem(($.$mol_button.prototype), "event_click"));
+	($mol_mem(($.$mol_button.prototype), "status"));
 	($mol_mem(($.$mol_button.prototype), "Speck"));
 
 
@@ -5112,7 +5274,6 @@ var $;
     var $$;
     (function ($$) {
         class $mol_button extends $.$mol_button {
-            status(next = [null]) { return next; }
             disabled() {
                 return !this.enabled();
             }
@@ -5140,13 +5301,13 @@ var $;
                 return this.enabled() ? super.tab_index() : -1;
             }
             error() {
-                const [error] = this.status();
+                const error = this.status()?.[0];
                 if (!error)
                     return '';
-                if (error instanceof Promise) {
+                if ($mol_promise_like(error)) {
                     return $mol_fail_hidden(error);
                 }
-                return String(error.message ?? error);
+                return this.$.$mol_error_message(error);
             }
             hint_safe() {
                 try {
@@ -5164,9 +5325,6 @@ var $;
                 ];
             }
         }
-        __decorate([
-            $mol_mem
-        ], $mol_button.prototype, "status", null);
         $$.$mol_button = $mol_button;
     })($$ = $.$$ || ($.$$ = {}));
 })($ || ($ = {}));
@@ -5207,7 +5365,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $mol_style_attach("mol/button/minor/minor.view.css", "[mol_button_minor] {\n\tcolor: var(--mol_theme_control);\n}\n\n[mol_button_minor][disabled] {\n\tcolor: var(--mol_theme_shade);\n}\n");
+    $mol_style_attach("mol/button/minor/minor.view.css", "[mol_button_minor]:where(:not([disabled])) {\n\tcolor: var(--mol_theme_control);\n}\n");
 })($ || ($ = {}));
 
 ;
@@ -5259,6 +5417,34 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    class $mol_dom_event extends $mol_object {
+        native;
+        constructor(native) {
+            super();
+            this.native = native;
+        }
+        prevented(next) {
+            if (next)
+                this.native.preventDefault();
+            return this.native.defaultPrevented;
+        }
+        static wrap(event) {
+            return new this.$.$mol_dom_event(event);
+        }
+    }
+    __decorate([
+        $mol_action
+    ], $mol_dom_event.prototype, "prevented", null);
+    __decorate([
+        $mol_action
+    ], $mol_dom_event, "wrap", null);
+    $.$mol_dom_event = $mol_dom_event;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     $mol_style_attach("mol/check/check.css", "[mol_check] {\n\tflex: 0 0 auto;\n\tjustify-content: flex-start;\n\talign-content: center;\n\t/* align-items: flex-start; */\n\tborder: none;\n\tfont-weight: inherit;\n\tbox-shadow: none;\n\ttext-align: left;\n\tdisplay: inline-flex;\n\tflex-wrap: nowrap;\n}\n\n[mol_check_title] {\n\tflex-shrink: 1;\n}\n");
 })($ || ($ = {}));
 
@@ -5273,11 +5459,11 @@ var $;
     (function ($$) {
         class $mol_check extends $.$mol_check {
             click(next) {
-                if (next?.defaultPrevented)
+                const event = next ? $mol_dom_event.wrap(next) : null;
+                if (event?.prevented())
                     return;
+                event?.prevented(true);
                 this.checked(!this.checked());
-                if (next)
-                    next.preventDefault();
             }
             sub() {
                 return [
@@ -5659,6 +5845,8 @@ var $;
                 }
                 catch (error) {
                     $mol_fail_log(error);
+                    if (error instanceof Error)
+                        return '💥' + error.message;
                     return '';
                 }
             }
@@ -5875,6 +6063,7 @@ var $;
                     return next;
                 let [min, max] = $mol_mem_cached(() => this.view_window()) ?? [0, 0];
                 const shift = this.view_window_shift();
+                this.view_window_shift(0);
                 min += shift;
                 max += shift;
                 let max2 = max = Math.min(max, kids.length);
@@ -6266,6 +6455,12 @@ var $;
         get native() {
             return new RegExp(this.source, this.flags);
         }
+        static separated(chunk, sep) {
+            return $mol_regexp.from([
+                $mol_regexp.repeat_greedy([[chunk], sep], 0),
+                chunk,
+            ]);
+        }
         static repeat(source, min = 0, max = Number.POSITIVE_INFINITY) {
             const regexp = $mol_regexp.from(source);
             const upper = Number.isFinite(max) ? max : '';
@@ -6296,14 +6491,14 @@ var $;
             };
             return regexp2;
         }
-        static vary(sources) {
+        static vary(sources, flags = 'gsu') {
             const groups = [];
             const chunks = sources.map(source => {
                 const regexp = $mol_regexp.from(source);
                 groups.push(...regexp.groups);
                 return regexp.source;
             });
-            return new $mol_regexp(`(?:${chunks.join('|')})`, '', groups);
+            return new $mol_regexp(`(?:${chunks.join('|')})`, flags, groups);
         }
         static optional(source) {
             return $mol_regexp.repeat_greedy(source, 0, 1);
@@ -6745,16 +6940,16 @@ var $;
         'code-docs': /\/\/\/.*?$/,
         'code-comment-block': /(?:\/\*[^]*?\*\/|\/\+[^]*?\+\/|<![^]*?>)/,
         'code-link': /(?:\w+:\/\/|#)\S+?(?=\s|\\\\|""|$)/,
-        'code-comment-inline': /\/\/.*?(?:$|\/\/)|- \\(?!\\).*|#!? .*/,
+        'code-comment-inline': /\/\/.*?(?:$|\/\/)|- \\(?!\\).*|(?<=^| )#!? .*/,
         'code-string': /(?:".*?"|'.*?'|`.*?`| ?\\\\.+?\\\\|\/.+?\/[dygimsu]*(?!\p{Letter})|[ \t]*\\[^\n]*)/u,
         'code-number': /[+-]?(?:\d*\.)?\d+\w*/,
-        'code-call': /\.?\w+ *(?=\()/,
+        'code-call': /\.?\w+(?=\()/,
         'code-sexpr': /\((\w+ )/,
-        'code-field': /(?:(?:\.|::|->)\w+|[\w-]+\??\s*:(?!\/\/|:))/,
-        'code-keyword': /\b(throw|readonly|unknown|keyof|typeof|never|from|class|struct|interface|type|function|extends|implements|module|namespace|import|export|include|require|var|val|let|const|for|do|while|until|in|out|of|new|if|then|else|switch|case|this|return|async|await|yield|try|catch|break|continue|get|set|public|private|protected|string|boolean|number|null|undefined|true|false|void|int|float|ref)\b/,
+        'code-field': /(?:(?<=\.|::|->)[a-z][\w-]*|(?<=[, \t] |\t)[\w-]+\??:(?!\/\/|:))/,
+        'code-keyword': /(?<=^|\t|[ )(}{=] )((throw|readonly|unknown|keyof|typeof|never|from|class|struct|interface|type|function|extends|implements|module|namespace|import|export|include|require|var|val|let|const|for|do|while|until|in|out|of|new|if|then|else|switch|case|return|async|await|yield|try|catch|break|continue|get|set|public|private|protected|void|int|float|ref)( |$|;))+/,
         'code-global': /[$]+\w*|\b[A-Z][a-z0-9]+[A-Z]\w*/,
         'code-word': /\w+/,
-        'code-decorator': /@\s*\S+/,
+        'code-decorator': /(?<=^|  |\t)@\s*\S+/,
         'code-tag': /<\/?[\w-]+\/?>?|&\w+;/,
         'code-punctuation': /[\-\[\]\{\}\(\)<=>~!\?@#%&\*_\+\\\/\|;:\.,\^]+?/,
     });

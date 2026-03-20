@@ -441,6 +441,16 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    $.$mol_key_handle = Symbol.for('$mol_key_handle');
+    $.$mol_key_store = new WeakMap();
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
+    if (!Symbol.dispose)
+        Symbol.dispose = Symbol('Symbol.dispose');
     class $mol_object2 {
         static $ = $;
         [Symbol.toStringTag];
@@ -471,8 +481,14 @@ var $;
         static toJSON() {
             return this.toString();
         }
+        static [$mol_key_handle]() {
+            return this.toString();
+        }
         destructor() { }
         static destructor() { }
+        [Symbol.dispose]() {
+            this.destructor();
+        }
         toString() {
             return this[Symbol.toStringTag] || this.constructor.name + '<>';
         }
@@ -1249,46 +1265,50 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $.$mol_key_store = new WeakMap();
     const TypedArray = Object.getPrototypeOf(Uint8Array);
     function $mol_key(value) {
-        if (typeof value === 'bigint')
-            return value.toString() + 'n';
-        if (typeof value === 'symbol')
-            return value.description;
-        if (!value)
-            return JSON.stringify(value);
-        if (typeof value !== 'object' && typeof value !== 'function')
-            return JSON.stringify(value);
-        return JSON.stringify(value, (field, value) => {
+        primitives: {
             if (typeof value === 'bigint')
                 return value.toString() + 'n';
             if (typeof value === 'symbol')
-                return value.description;
+                return `Symbol(${value.description})`;
             if (!value)
-                return value;
+                return JSON.stringify(value);
             if (typeof value !== 'object' && typeof value !== 'function')
-                return value;
-            if (Array.isArray(value))
-                return value;
-            const proto = Reflect.getPrototypeOf(value);
-            if (!proto)
-                return value;
-            if (Reflect.getPrototypeOf(proto) === null)
-                return value;
-            if ('toJSON' in value)
-                return value;
-            if (value instanceof RegExp)
-                return value.toString();
-            if (value instanceof TypedArray)
-                return [...value];
-            let key = $.$mol_key_store.get(value);
+                return JSON.stringify(value);
+        }
+        caching: {
+            let key = $mol_key_store.get(value);
             if (key)
                 return key;
-            key = $mol_guid();
-            $.$mol_key_store.set(value, key);
+        }
+        objects: {
+            if (value instanceof TypedArray) {
+                return `${value[Symbol.toStringTag]}([${[...value].map(v => $mol_key(v))}])`;
+            }
+            if (Array.isArray(value))
+                return `[${value.map(v => $mol_key(v))}]`;
+            if (value instanceof RegExp)
+                return value.toString();
+            if (value instanceof Date)
+                return `Date(${value.valueOf()})`;
+        }
+        structures: {
+            const proto = Reflect.getPrototypeOf(value);
+            if (!proto || !Reflect.getPrototypeOf(proto)) {
+                return `{${Object.entries(value).map(([k, v]) => JSON.stringify(k) + ':' + $mol_key(v))}}`;
+            }
+        }
+        handlers: {
+            if ($mol_key_handle in value) {
+                return value[$mol_key_handle]();
+            }
+        }
+        containers: {
+            const key = JSON.stringify('#' + $mol_guid());
+            $mol_key_store.set(value, key);
             return key;
-        });
+        }
     }
     $.$mol_key = $mol_key;
 })($ || ($ = {}));
@@ -1648,15 +1668,15 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    const catched = new WeakMap();
+    const catched = new WeakSet();
     function $mol_fail_catch(error) {
         if (typeof error !== 'object')
             return false;
         if ($mol_promise_like(error))
             $mol_fail_hidden(error);
-        if (catched.get(error))
+        if (catched.has(error))
             return false;
-        catched.set(error, true);
+        catched.add(error);
         return true;
     }
     $.$mol_fail_catch = $mol_fail_catch;
@@ -1666,10 +1686,26 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    function $mol_try(handler) {
+        try {
+            return handler();
+        }
+        catch (error) {
+            console.error(error);
+            return error;
+        }
+    }
+    $.$mol_try = $mol_try;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     let error;
     let result;
     let handler;
-    function $mol_try(handler2) {
+    function $mol_try_web(handler2) {
         handler = handler2;
         error = undefined;
         result = undefined;
@@ -1680,7 +1716,8 @@ var $;
         result = undefined;
         return error2 || result2;
     }
-    $.$mol_try = $mol_try;
+    $.$mol_try_web = $mol_try_web;
+    $.$mol_try = $mol_try_web;
     self.addEventListener('$mol_try', (event) => {
         result = handler();
     }, true);
@@ -1791,8 +1828,15 @@ var $;
                 (this.host ?? this.task)[this.field()] = null;
             }
             else {
-                ;
-                (this.host ?? this.task)[this.field()].delete($mol_key(this.args[0]));
+                const key = $mol_key(this.args[0]);
+                const map = (this.host ?? this.task)[this.field()];
+                if (!map.has(key))
+                    this.$.$mol_log3_warn({
+                        place: this,
+                        message: 'Absent key on destruction',
+                        hint: 'Check for $mol_key(key) is not changed',
+                    });
+                map.delete(key);
             }
         }
         put(next) {
@@ -2202,6 +2246,23 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    function $mol_wait_user_async() {
+        return new Promise(done => $mol_dom.addEventListener('click', function onclick() {
+            $mol_dom.removeEventListener('click', onclick);
+            done(null);
+        }));
+    }
+    $.$mol_wait_user_async = $mol_wait_user_async;
+    function $mol_wait_user() {
+        return this.$mol_wire_sync(this).$mol_wait_user_async();
+    }
+    $.$mol_wait_user = $mol_wait_user;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     class $mol_storage extends $mol_object2 {
         static native() {
             return this.$.$mol_dom_context.navigator.storage ?? {
@@ -2217,7 +2278,9 @@ var $;
                 return Boolean(next);
             const native = this.native();
             if (next && !$mol_mem_cached(() => this.persisted())) {
-                native.persist().then(actual => {
+                this.$.$mol_wait_user_async()
+                    .then(() => native.persist())
+                    .then(actual => {
                     setTimeout(() => this.persisted(actual, 'cache'), 5000);
                     if (actual)
                         this.$.$mol_log3_done({ place: `$mol_storage`, message: `Persist: Yes` });
@@ -2380,8 +2443,10 @@ var $;
 var $;
 (function ($) {
     $.$mol_gap = $mol_style_prop('mol_gap', [
+        'page',
         'block',
         'text',
+        'emoji',
         'round',
         'space',
         'blur',
@@ -2392,7 +2457,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $mol_style_attach("mol/gap/gap.css", ":root {\n\t--mol_gap_block: .75rem;\n\t--mol_gap_text: .5rem .75rem;\n\t--mol_gap_round: .25rem;\n\t--mol_gap_space: .25rem;\n\t--mol_gap_blur: .5rem;\n}\n");
+    $mol_style_attach("mol/gap/gap.css", ":root {\n\t--mol_gap_page: 3rem;\n\t--mol_gap_block: .75rem;\n\t--mol_gap_text: .5rem .75rem;\n\t--mol_gap_emoji: .5rem;\n\t--mol_gap_round: .25rem;\n\t--mol_gap_space: .25rem;\n\t--mol_gap_blur: .5rem;\n}\n");
 })($ || ($ = {}));
 
 ;
@@ -2975,6 +3040,16 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    function $mol_error_message(error) {
+        return String((error instanceof Error ? error.message : null) || error) || 'Unknown';
+    }
+    $.$mol_error_message = $mol_error_message;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     function $mol_dom_render_styles(el, styles) {
         for (let name in styles) {
             let val = styles[name];
@@ -3066,7 +3141,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $mol_style_attach("mol/view/view/view.css", "[mol_view] {\n\ttransition-property: height, width, min-height, min-width, max-width, max-height, transform, scale, translate, rotate;\n\ttransition-duration: .2s;\n\ttransition-timing-function: ease-out;\n\t-webkit-appearance: none;\n\tbox-sizing: border-box;\n\tdisplay: flex;\n\tflex-shrink: 0;\n\tcontain: style;\n\tscrollbar-color: var(--mol_theme_line) transparent;\n\tscrollbar-width: thin;\n}\t\n\n[mol_view]::selection {\n\tbackground: var(--mol_theme_line);\n}\t\n\n[mol_view]::-webkit-scrollbar {\n\twidth: .25rem;\n\theight: .25rem;\n}\n\n[mol_view]::-webkit-scrollbar-corner {\n\tbackground-color: var(--mol_theme_line);\n}\n\n[mol_view]::-webkit-scrollbar-track {\n\tbackground-color: transparent;\n}\n\n[mol_view]::-webkit-scrollbar-thumb {\n\tbackground-color: var(--mol_theme_line);\n\tborder-radius: var(--mol_gap_round);\n}\n\n[mol_view] > * {\n\tword-break: inherit;\n}\n\n[mol_view_root] {\n\tmargin: 0;\n\tpadding: 0;\n\twidth: 100%;\n\theight: 100%;\n\tbox-sizing: border-box;\n\tfont-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n\tfont-size: 1rem;\n\tline-height: 1.5rem;\n\t/* background: var(--mol_theme_back);\n\tcolor: var(--mol_theme_text); */\n\tcontain: unset; /** Fixes bg ignoring when applied to body on Chrome */\n\ttab-size: 4;\n\toverscroll-behavior: contain; /** Disable navigation gestures **/\n}\n\n@media print {\n\t[mol_view_root] {\n\t\theight: auto;\n\t}\n}\n[mol_view][mol_view_error]:not([mol_view_error=\"Promise\"], [mol_view_error=\"$mol_promise_blocker\"]) {\n\tbackground-image: repeating-linear-gradient(\n\t\t-45deg,\n\t\t#f92323,\n\t\t#f92323 .5rem,\n\t\t#ff3d3d .5rem,\n\t\t#ff3d3d 1.5rem\n\t);\n\tcolor: black;\n\talign-items: center;\n\tjustify-content: center;\n}\n\n@keyframes mol_view_wait {\n\tfrom {\n\t\topacity: .25;\n\t}\n\t20% {\n\t\topacity: .75;\n\t}\n\tto {\n\t\topacity: .25;\n\t}\n}\n\n:where([mol_view][mol_view_error=\"$mol_promise_blocker\"]),\n:where([mol_view][mol_view_error=\"Promise\"]) {\n\tbackground: var(--mol_theme_hover);\n}\n\n[mol_view][mol_view_error=\"Promise\"] {\n\tanimation: mol_view_wait 1s steps(20,end) infinite;\n}\n");
+    $mol_style_attach("mol/view/view/view.css", "@view-transition {\n\tnavigation: auto;\n}\n\n[mol_view] {\n\ttransition-property: height, width, min-height, min-width, max-width, max-height, transform, scale, translate, rotate;\n\ttransition-duration: .2s;\n\ttransition-timing-function: ease-out;\n\t-webkit-appearance: none;\n\tbox-sizing: border-box;\n\tdisplay: flex;\n\tflex-shrink: 0;\n\tcontain: style;\n\tscrollbar-color: var(--mol_theme_line) transparent;\n\tscrollbar-width: thin;\n}\t\n\n[mol_view]::selection {\n\tbackground: var(--mol_theme_line);\n}\t\n\n[mol_view]::-webkit-scrollbar {\n\twidth: .25rem;\n\theight: .25rem;\n}\n\n[mol_view]::-webkit-scrollbar-corner {\n\tbackground-color: var(--mol_theme_line);\n}\n\n[mol_view]::-webkit-scrollbar-track {\n\tbackground-color: transparent;\n}\n\n[mol_view]::-webkit-scrollbar-thumb {\n\tbackground-color: var(--mol_theme_line);\n\tborder-radius: var(--mol_gap_round);\n}\n\n[mol_view] > * {\n\tword-break: inherit;\n}\n\n[mol_view_root] {\n\tmargin: 0;\n\tpadding: 0;\n\twidth: 100%;\n\theight: 100%;\n\tbox-sizing: border-box;\n\tfont-family: system-ui, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n\tfont-size: 1rem;\n\tline-height: 1.5rem;\n\t/* background: var(--mol_theme_back);\n\tcolor: var(--mol_theme_text); */\n\tcontain: unset; /** Fixes bg ignoring when applied to body on Chrome */\n\ttab-size: 4;\n\t/*overscroll-behavior: contain; /** Disable navigation gestures **/\n}\n\n@media print {\n\t[mol_view_root] {\n\t\theight: auto;\n\t}\n}\n[mol_view][mol_view_error]:not([mol_view_error=\"Promise\"], [mol_view_error=\"$mol_promise_blocker\"]) {\n\tbackground-image: repeating-linear-gradient(\n\t\t-45deg,\n\t\t#f92323,\n\t\t#f92323 .5rem,\n\t\t#ff3d3d .5rem,\n\t\t#ff3d3d 1.5rem\n\t);\n\tcolor: black;\n\talign-items: center;\n\tjustify-content: center;\n}\n\n@keyframes mol_view_wait {\n\tfrom {\n\t\topacity: .25;\n\t}\n\t20% {\n\t\topacity: .75;\n\t}\n\tto {\n\t\topacity: .25;\n\t}\n}\n\n:where([mol_view][mol_view_error=\"$mol_promise_blocker\"]),\n:where([mol_view][mol_view_error=\"Promise\"]) {\n\tbackground: var(--mol_theme_hover);\n}\n\n[mol_view][mol_view_error=\"Promise\"] {\n\tanimation: mol_view_wait 1s steps(20,end) infinite;\n}\n");
 })($ || ($ = {}));
 
 ;
@@ -3260,8 +3335,8 @@ var $;
                 if ($mol_promise_like(error))
                     break render;
                 try {
-                    const message = error.message || error;
-                    node.innerText = message.replace(/^|$/mg, '\xA0\xA0');
+                    ;
+                    node.innerText = this.$.$mol_error_message(error).replace(/^|$/mg, '\xA0\xA0');
                 }
                 catch { }
             }
@@ -3949,6 +4024,10 @@ var $;
 			if(next !== undefined) return next;
 			return null;
 		}
+		status(next){
+			if(next !== undefined) return next;
+			return [];
+		}
 		event(){
 			return {
 				...(super.event()), 
@@ -3980,6 +4059,7 @@ var $;
 	($mol_mem(($.$mol_button.prototype), "event_key_press"));
 	($mol_mem(($.$mol_button.prototype), "click"));
 	($mol_mem(($.$mol_button.prototype), "event_click"));
+	($mol_mem(($.$mol_button.prototype), "status"));
 	($mol_mem(($.$mol_button.prototype), "Speck"));
 
 
@@ -3996,7 +4076,6 @@ var $;
     var $$;
     (function ($$) {
         class $mol_button extends $.$mol_button {
-            status(next = [null]) { return next; }
             disabled() {
                 return !this.enabled();
             }
@@ -4024,13 +4103,13 @@ var $;
                 return this.enabled() ? super.tab_index() : -1;
             }
             error() {
-                const [error] = this.status();
+                const error = this.status()?.[0];
                 if (!error)
                     return '';
-                if (error instanceof Promise) {
+                if ($mol_promise_like(error)) {
                     return $mol_fail_hidden(error);
                 }
-                return String(error.message ?? error);
+                return this.$.$mol_error_message(error);
             }
             hint_safe() {
                 try {
@@ -4048,9 +4127,6 @@ var $;
                 ];
             }
         }
-        __decorate([
-            $mol_mem
-        ], $mol_button.prototype, "status", null);
         $$.$mol_button = $mol_button;
     })($$ = $.$$ || ($.$$ = {}));
 })($ || ($ = {}));
@@ -4091,7 +4167,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $mol_style_attach("mol/button/minor/minor.view.css", "[mol_button_minor] {\n\tcolor: var(--mol_theme_control);\n}\n\n[mol_button_minor][disabled] {\n\tcolor: var(--mol_theme_shade);\n}\n");
+    $mol_style_attach("mol/button/minor/minor.view.css", "[mol_button_minor]:where(:not([disabled])) {\n\tcolor: var(--mol_theme_control);\n}\n");
 })($ || ($ = {}));
 
 ;
@@ -4234,6 +4310,7 @@ var $;
                     return next;
                 let [min, max] = $mol_mem_cached(() => this.view_window()) ?? [0, 0];
                 const shift = this.view_window_shift();
+                this.view_window_shift(0);
                 min += shift;
                 max += shift;
                 let max2 = max = Math.min(max, kids.length);
@@ -4428,6 +4505,34 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    class $mol_dom_event extends $mol_object {
+        native;
+        constructor(native) {
+            super();
+            this.native = native;
+        }
+        prevented(next) {
+            if (next)
+                this.native.preventDefault();
+            return this.native.defaultPrevented;
+        }
+        static wrap(event) {
+            return new this.$.$mol_dom_event(event);
+        }
+    }
+    __decorate([
+        $mol_action
+    ], $mol_dom_event.prototype, "prevented", null);
+    __decorate([
+        $mol_action
+    ], $mol_dom_event, "wrap", null);
+    $.$mol_dom_event = $mol_dom_event;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     $mol_style_attach("mol/check/check.css", "[mol_check] {\n\tflex: 0 0 auto;\n\tjustify-content: flex-start;\n\talign-content: center;\n\t/* align-items: flex-start; */\n\tborder: none;\n\tfont-weight: inherit;\n\tbox-shadow: none;\n\ttext-align: left;\n\tdisplay: inline-flex;\n\tflex-wrap: nowrap;\n}\n\n[mol_check_title] {\n\tflex-shrink: 1;\n}\n");
 })($ || ($ = {}));
 
@@ -4442,11 +4547,11 @@ var $;
     (function ($$) {
         class $mol_check extends $.$mol_check {
             click(next) {
-                if (next?.defaultPrevented)
+                const event = next ? $mol_dom_event.wrap(next) : null;
+                if (event?.prevented())
                     return;
+                event?.prevented(true);
                 this.checked(!this.checked());
-                if (next)
-                    next.preventDefault();
             }
             sub() {
                 return [

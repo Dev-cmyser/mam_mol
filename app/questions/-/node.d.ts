@@ -102,6 +102,11 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    const $mol_key_handle: unique symbol;
+    const $mol_key_store: WeakMap<object, string>;
+}
+
+declare namespace $ {
     class $mol_object2 {
         static $: $;
         [Symbol.toStringTag]: string;
@@ -112,8 +117,10 @@ declare namespace $ {
         static [Symbol.toPrimitive](): any;
         static toString(): any;
         static toJSON(): any;
+        static [$mol_key_handle](): any;
         destructor(): void;
         static destructor(): void;
+        [Symbol.dispose](): void;
         toString(): string;
     }
 }
@@ -397,6 +404,10 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    function $mol_array_chunks<Item>(array: readonly Item[], rule: number | ((item: Item, index: number) => boolean)): Item[][];
+}
+
+declare namespace $ {
     function $mol_tree2_from_json(json: any, span?: $mol_span): $mol_tree2;
 }
 
@@ -436,7 +447,7 @@ declare namespace $ {
         static getter<Host, Args extends readonly unknown[], Result>(task: (this: Host, ...args: Args) => Result): (host: Host, args: Args) => $mol_wire_task<Host, Args, Result>;
         get temp(): boolean;
         complete(): void;
-        put(next: Result | Error | Promise<Result | Error>): Result | Error | Promise<Result | Error>;
+        put(next: Result | Error | Promise<Result | Error>): Error | Result | Promise<Error | Result>;
         destructor(): void;
     }
 }
@@ -761,7 +772,6 @@ declare namespace $ {
 }
 
 declare namespace $ {
-    const $mol_key_store: WeakMap<object, string>;
     function $mol_key<Value>(value: Value): string;
 }
 
@@ -894,6 +904,11 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    function $mol_wait_user_async(this: $): Promise<unknown>;
+    function $mol_wait_user(this: $): unknown;
+}
+
+declare namespace $ {
     class $mol_storage extends $mol_object2 {
         static native(): StorageManager;
         static persisted(next?: boolean, cache?: 'cache'): boolean;
@@ -955,6 +970,10 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    function $mol_charset_buffer(size: number): Uint8Array<ArrayBuffer>;
+}
+
+declare namespace $ {
     function $mol_charset_encode(str: string): Uint8Array<ArrayBuffer>;
     function $mol_charset_encode_to(str: string, buf: Uint8Array<ArrayBuffer>, from?: number): number;
     function $mol_charset_encode_size(str: string): number;
@@ -974,6 +993,7 @@ declare namespace $ {
         }): number;
         read(): Uint8Array<ArrayBuffer>;
         truncate(size: number): void;
+        flush(): void;
         close(): void;
         destructor(): void;
     }
@@ -990,6 +1010,7 @@ declare namespace $ {
         }): number;
         truncate(size: number): void;
         read(): Uint8Array<ArrayBuffer>;
+        flush(): void;
         close(): void;
     }
 }
@@ -1119,7 +1140,7 @@ declare namespace $ {
 }
 
 declare namespace $ {
-    let $mol_gap: Record<"text" | "block" | "blur" | "space" | "round", $mol_style_func<"var", unknown>>;
+    let $mol_gap: Record<"text" | "block" | "blur" | "page" | "space" | "round" | "emoji", $mol_style_func<"var", unknown>>;
 }
 
 declare namespace $ {
@@ -1224,6 +1245,10 @@ declare namespace $ {
     function $mol_dom_render_events(el: Element, events: {
         [key: string]: (event: Event) => any;
     }, passive?: boolean): void;
+}
+
+declare namespace $ {
+    function $mol_error_message(this: $, error: unknown): string;
 }
 
 declare namespace $ {
@@ -1657,6 +1682,7 @@ declare namespace $ {
 		enabled( ): boolean
 		click( next?: any ): any
 		event_click( next?: any ): any
+		status( next?: readonly(any)[] ): readonly(any)[]
 		event( ): ({ 
 			click( next?: ReturnType< $mol_button['activate'] > ): ReturnType< $mol_button['activate'] >,
 			dblclick( next?: ReturnType< $mol_button['clicks'] > ): ReturnType< $mol_button['clicks'] >,
@@ -1677,7 +1703,6 @@ declare namespace $ {
 //# sourceMappingURL=button.view.tree.d.ts.map
 declare namespace $.$$ {
     class $mol_button extends $.$mol_button {
-        status(next?: any[]): any[];
         disabled(): boolean;
         event_activate(next: Event): void;
         event_key_press(event: KeyboardEvent): any;
@@ -1715,6 +1740,15 @@ declare namespace $ {
 }
 
 //# sourceMappingURL=minor.view.tree.d.ts.map
+declare namespace $ {
+    class $mol_dom_event<EventType extends Event> extends $mol_object {
+        readonly native: EventType;
+        constructor(native: EventType);
+        prevented(next?: boolean): boolean;
+        static wrap<EventType extends Event>(event: EventType): $mol_dom_event<EventType>;
+    }
+}
+
 declare namespace $ {
 }
 
@@ -2134,9 +2168,16 @@ declare namespace $ {
         }> | null;
         generate(params: Groups_to_params<Groups>): string | null;
         get native(): RegExp;
+        static separated<Chunk extends $mol_regexp_source, Sep extends $mol_regexp_source>(chunk: Chunk, sep: Sep): $mol_regexp<[$mol_regexp<[[Chunk], Sep] extends infer T ? T extends [[Chunk], Sep] ? T extends $mol_regexp_source[] ? $mol_type_merge<$mol_type_intersect<{ [key in Extract<keyof T, number>]: $mol_regexp_groups<T[key]>; }[Extract<keyof T, number>]>> : T extends RegExp ? Record<string, string> extends NonNullable<NonNullable<ReturnType<T["exec"]>>["groups"]> ? {} : NonNullable<NonNullable<ReturnType<T["exec"]>>["groups"]> : T extends {
+            readonly [x: string]: $mol_regexp_source;
+        } ? $mol_type_merge<$mol_type_intersect<{ [key_1 in keyof T]: $mol_type_merge<Omit<{ readonly [k in Extract<keyof T, string>]: string; }, key_1> & { readonly [k_1 in key_1]: T[key_1] extends string ? T[key_1] : string; } & $mol_regexp_groups<T[key_1]>>; }[keyof T]>> : never : never : never>, Chunk] extends infer T_1 ? T_1 extends [$mol_regexp<[[Chunk], Sep] extends infer T_2 ? T_2 extends [[Chunk], Sep] ? T_2 extends $mol_regexp_source[] ? $mol_type_merge<$mol_type_intersect<{ [key_4 in Extract<keyof T_2, number>]: $mol_regexp_groups<T_2[key_4]>; }[Extract<keyof T_2, number>]>> : T_2 extends RegExp ? Record<string, string> extends NonNullable<NonNullable<ReturnType<T_2["exec"]>>["groups"]> ? {} : NonNullable<NonNullable<ReturnType<T_2["exec"]>>["groups"]> : T_2 extends {
+            readonly [x: string]: $mol_regexp_source;
+        } ? $mol_type_merge<$mol_type_intersect<{ [key_5 in keyof T_2]: $mol_type_merge<Omit<{ readonly [k in Extract<keyof T_2, string>]: string; }, key_5> & { readonly [k_1 in key_5]: T_2[key_5] extends string ? T_2[key_5] : string; } & $mol_regexp_groups<T_2[key_5]>>; }[keyof T_2]>> : never : never : never>, Chunk] ? T_1 extends $mol_regexp_source[] ? $mol_type_merge<$mol_type_intersect<{ [key_2 in Extract<keyof T_1, number>]: $mol_regexp_groups<T_1[key_2]>; }[Extract<keyof T_1, number>]>> : T_1 extends RegExp ? Record<string, string> extends NonNullable<NonNullable<ReturnType<T_1["exec"]>>["groups"]> ? {} : NonNullable<NonNullable<ReturnType<T_1["exec"]>>["groups"]> : T_1 extends {
+            readonly [x: string]: $mol_regexp_source;
+        } ? $mol_type_merge<$mol_type_intersect<{ [key_3 in keyof T_1]: $mol_type_merge<Omit<{ readonly [k in Extract<keyof T_1, string>]: string; }, key_3> & { readonly [k_1 in key_3]: T_1[key_3] extends string ? T_1[key_3] : string; } & $mol_regexp_groups<T_1[key_3]>>; }[keyof T_1]>> : never : never : never>;
         static repeat<Source extends $mol_regexp_source>(source: Source, min?: number, max?: number): $mol_regexp<$mol_regexp_groups<Source>>;
         static repeat_greedy<Source extends $mol_regexp_source>(source: Source, min?: number, max?: number): $mol_regexp<$mol_regexp_groups<Source>>;
-        static vary<Sources extends readonly $mol_regexp_source[]>(sources: Sources): $mol_regexp<$mol_regexp_groups<Sources[number]>>;
+        static vary<Sources extends readonly $mol_regexp_source[]>(sources: Sources, flags?: string): $mol_regexp<$mol_regexp_groups<Sources[number]>>;
         static optional<Source extends $mol_regexp_source>(source: Source): $mol_regexp<$mol_regexp_groups<Source>>;
         static force_after(source: $mol_regexp_source): $mol_regexp<Record<string, string>>;
         static forbid_after(source: $mol_regexp_source): $mol_regexp<Record<string, string>>;
@@ -2947,7 +2988,7 @@ declare namespace $.$$ {
         sub_visible(): readonly $mol_view_content[];
         message_receive(event?: MessageEvent<[string, string]>): void;
         uri_change(event: MessageEvent<[string, string]>): void;
-        auto(): ($mol_dom_listener | Window)[];
+        auto(): (Window | $mol_dom_listener)[];
     }
 }
 
@@ -3858,6 +3899,14 @@ declare namespace $ {
         'Network Read Timeout Error' = 598,
         'Network Connect Timeout Error' = 599
     }
+}
+
+declare namespace $ {
+    function $mol_error_fence<Data>(task: () => Data, fallback: (parent: Error) => Error | Data | PromiseLike<Data>, loading?: (parent: PromiseLike<Data>) => Error | Data | PromiseLike<Data>): Data;
+}
+
+declare namespace $ {
+    function $mol_error_enriched<V>(cause: {}, cb: () => V): V;
 }
 
 declare namespace $ {

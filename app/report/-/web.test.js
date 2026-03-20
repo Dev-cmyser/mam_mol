@@ -669,7 +669,7 @@ var $;
         finally {
             $.$mol_fail = fail;
         }
-        $mol_fail(new Error('Not failed'));
+        $mol_fail(new Error('Not failed', { cause: { expect: ErrorRight } }));
     }
     $.$mol_assert_fail = $mol_assert_fail;
     function $mol_assert_like(...args) {
@@ -691,8 +691,6 @@ var $;
     function $mol_assert_equal(...args) {
         for (let i = 1; i < args.length; ++i) {
             if ($mol_compare_deep(args[0], args[i]))
-                continue;
-            if (args[0] instanceof $mol_dom_context.Element && args[i] instanceof $mol_dom_context.Element && args[0].outerHTML === args[i].outerHTML)
                 continue;
             return $mol_fail(new Error(`Equality assertion failure`, { cause: { 0: args[0], [i]: args[i] } }));
         }
@@ -1899,9 +1897,9 @@ var $;
             $mol_assert_equal($mol_key({ foo: [false] }), '{"foo":[false]}');
         },
         'Uint8Array'() {
-            $mol_assert_equal($mol_key(new Uint8Array([1, 2])), '[1,2]');
-            $mol_assert_equal($mol_key([new Uint8Array([1, 2])]), '[[1,2]]');
-            $mol_assert_equal($mol_key({ foo: new Uint8Array([1, 2]) }), '{"foo":[1,2]}');
+            $mol_assert_equal($mol_key(new Uint8Array([1, 2])), 'Uint8Array([1,2])');
+            $mol_assert_equal($mol_key([new Uint8Array([1, 2])]), '[Uint8Array([1,2])]');
+            $mol_assert_equal($mol_key({ foo: new Uint8Array([1, 2]) }), '{"foo":Uint8Array([1,2])}');
         },
         'Function'() {
             const func = () => { };
@@ -1922,21 +1920,27 @@ var $;
         },
         'Custom JSON representation'() {
             class User {
+                toJSON() { return 'jin'; }
+            }
+            $mol_assert_unique([$mol_key(new User)], [$mol_key(new User)]);
+        },
+        'Custom key handler'() {
+            class User {
                 name;
                 age;
                 constructor(name, age) {
                     this.name = name;
                     this.age = age;
                 }
-                toJSON() { return { name: this.name }; }
+                [$mol_key_handle]() { return `User(${JSON.stringify(this.name)})`; }
             }
-            $mol_assert_equal($mol_key(new User('jin', 18)), '{"name":"jin"}');
+            $mol_assert_equal($mol_key([new User('jin', 16)]), $mol_key([new User('jin', 18)]), '[User("jin")]');
         },
         'Special native classes'() {
-            $mol_assert_equal($mol_key(new Date('xyz')), 'null');
-            $mol_assert_equal($mol_key(new Date('2001-01-02T03:04:05.678Z')), '"2001-01-02T03:04:05.678Z"');
-            $mol_assert_equal($mol_key(/./), '"/./"');
-            $mol_assert_equal($mol_key(/\./gimsu), '"/\\\\./gimsu"');
+            $mol_assert_equal($mol_key(new Date('xyz')), 'Date(NaN)');
+            $mol_assert_equal($mol_key(new Date(12345)), 'Date(12345)');
+            $mol_assert_equal($mol_key(/./), '/./');
+            $mol_assert_equal($mol_key(/\./gimsu), '/\\./gimsu');
         },
     });
 })($ || ($ = {}));
@@ -2746,6 +2750,39 @@ var $;
         },
         'encode surrogate pair'() {
             $mol_assert_equal($mol_charset_encode('😀'), new Uint8Array([0xf0, 0x9f, 0x98, 0x80]));
+        },
+    });
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
+    $mol_test({
+        'auto name'() {
+            class Invalid extends $mol_error_mix {
+            }
+            const mix = new Invalid('foo');
+            $mol_assert_equal(mix.name, 'Invalid_Error');
+        },
+        'simpe mix'() {
+            const mix = new $mol_error_mix('foo', {}, new Error('bar'), new Error('lol'));
+            $mol_assert_equal(mix.message, 'foo');
+            $mol_assert_equal(mix.errors.map(e => e.message), ['bar', 'lol']);
+        },
+        'provide additional info'() {
+            class Invalid extends $mol_error_mix {
+            }
+            const mix = new $mol_error_mix('Wrong password', {}, new Invalid('Too short', { value: 'p@ssw0rd', hint: '> 8 letters' }), new Invalid('Too simple', { value: 'p@ssw0rd', hint: 'need capital letter' }));
+            const hints = [];
+            if (mix instanceof $mol_error_mix) {
+                for (const er of mix.errors) {
+                    if (er instanceof Invalid) {
+                        hints.push(er.cause?.hint ?? '');
+                    }
+                }
+            }
+            $mol_assert_equal(hints, ['> 8 letters', 'need capital letter']);
         },
     });
 })($ || ($ = {}));

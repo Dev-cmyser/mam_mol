@@ -102,6 +102,11 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    const $mol_key_handle: unique symbol;
+    const $mol_key_store: WeakMap<object, string>;
+}
+
+declare namespace $ {
     class $mol_object2 {
         static $: $;
         [Symbol.toStringTag]: string;
@@ -112,8 +117,10 @@ declare namespace $ {
         static [Symbol.toPrimitive](): any;
         static toString(): any;
         static toJSON(): any;
+        static [$mol_key_handle](): any;
         destructor(): void;
         static destructor(): void;
+        [Symbol.dispose](): void;
         toString(): string;
     }
 }
@@ -394,6 +401,10 @@ declare namespace $ {
 
 declare namespace $ {
     function $mol_tree2_from_string(this: $, str: string, uri?: string): $mol_tree2;
+}
+
+declare namespace $ {
+    function $mol_array_chunks<Item>(array: readonly Item[], rule: number | ((item: Item, index: number) => boolean)): Item[][];
 }
 
 declare namespace $ {

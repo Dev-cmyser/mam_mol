@@ -81,15 +81,15 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    const catched = new WeakMap();
+    const catched = new WeakSet();
     function $mol_fail_catch(error) {
         if (typeof error !== 'object')
             return false;
         if ($mol_promise_like(error))
             $mol_fail_hidden(error);
-        if (catched.get(error))
+        if (catched.has(error))
             return false;
-        catched.set(error, true);
+        catched.add(error);
         return true;
     }
     $.$mol_fail_catch = $mol_fail_catch;
@@ -104,6 +104,7 @@ var $;
             return handler();
         }
         catch (error) {
+            console.error(error);
             return error;
         }
     }
@@ -365,6 +366,16 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    $.$mol_key_handle = Symbol.for('$mol_key_handle');
+    $.$mol_key_store = new WeakMap();
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
+    if (!Symbol.dispose)
+        Symbol.dispose = Symbol('Symbol.dispose');
     class $mol_object2 {
         static $ = $;
         [Symbol.toStringTag];
@@ -395,8 +406,14 @@ var $;
         static toJSON() {
             return this.toString();
         }
+        static [$mol_key_handle]() {
+            return this.toString();
+        }
         destructor() { }
         static destructor() { }
+        [Symbol.dispose]() {
+            this.destructor();
+        }
         toString() {
             return this[Symbol.toStringTag] || this.constructor.name + '<>';
         }
@@ -1728,6 +1745,30 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    function $mol_array_chunks(array, rule) {
+        const br = typeof rule === 'number' ? (_, i) => i % rule === 0 : rule;
+        let chunk = [];
+        const chunks = [];
+        for (let i = 0; i < array.length; ++i) {
+            const item = array[i];
+            if (br(item, i)) {
+                if (chunk.length)
+                    chunks.push(chunk);
+                chunk = [];
+            }
+            chunk.push(item);
+        }
+        if (chunk.length)
+            chunks.push(chunk);
+        return chunks;
+    }
+    $.$mol_array_chunks = $mol_array_chunks;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     function $mol_tree2_from_json(json, span = $mol_span.unknown) {
         if (typeof json === 'boolean' || typeof json === 'number' || json === null) {
             return new $mol_tree2(String(json), '', [], span);
@@ -1744,7 +1785,9 @@ var $;
         }
         if (ArrayBuffer.isView(json)) {
             const buf = new Uint8Array(json.buffer, json.byteOffset, json.byteLength);
-            return $mol_tree2.data(String.fromCharCode(...buf), [], span);
+            const codes = [...buf].map(b => b.toString(16).toUpperCase().padStart(2, '0'));
+            const str = $mol_array_chunks(codes, 8).map(c => c.join(' ')).join('\n');
+            return $mol_tree2.data(str, [], span);
         }
         if (json instanceof Date) {
             return new $mol_tree2('', json.toISOString(), [], span);
@@ -1827,7 +1870,7 @@ var $;
     function $mol_log3_node_make(level, output, type, color) {
         return function $mol_log3_logger(event) {
             if (!event.time)
-                event = { time: new Date().toISOString(), ...event };
+                event = { ...event, time: new Date().toISOString() };
             let tree = this.$mol_tree2_from_json(event);
             tree = tree.struct(type, tree.kids);
             let str = color(tree.toString());
@@ -2357,46 +2400,50 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $.$mol_key_store = new WeakMap();
     const TypedArray = Object.getPrototypeOf(Uint8Array);
     function $mol_key(value) {
-        if (typeof value === 'bigint')
-            return value.toString() + 'n';
-        if (typeof value === 'symbol')
-            return value.description;
-        if (!value)
-            return JSON.stringify(value);
-        if (typeof value !== 'object' && typeof value !== 'function')
-            return JSON.stringify(value);
-        return JSON.stringify(value, (field, value) => {
+        primitives: {
             if (typeof value === 'bigint')
                 return value.toString() + 'n';
             if (typeof value === 'symbol')
-                return value.description;
+                return `Symbol(${value.description})`;
             if (!value)
-                return value;
+                return JSON.stringify(value);
             if (typeof value !== 'object' && typeof value !== 'function')
-                return value;
-            if (Array.isArray(value))
-                return value;
-            const proto = Reflect.getPrototypeOf(value);
-            if (!proto)
-                return value;
-            if (Reflect.getPrototypeOf(proto) === null)
-                return value;
-            if ('toJSON' in value)
-                return value;
-            if (value instanceof RegExp)
-                return value.toString();
-            if (value instanceof TypedArray)
-                return [...value];
-            let key = $.$mol_key_store.get(value);
+                return JSON.stringify(value);
+        }
+        caching: {
+            let key = $mol_key_store.get(value);
             if (key)
                 return key;
-            key = $mol_guid();
-            $.$mol_key_store.set(value, key);
+        }
+        objects: {
+            if (value instanceof TypedArray) {
+                return `${value[Symbol.toStringTag]}([${[...value].map(v => $mol_key(v))}])`;
+            }
+            if (Array.isArray(value))
+                return `[${value.map(v => $mol_key(v))}]`;
+            if (value instanceof RegExp)
+                return value.toString();
+            if (value instanceof Date)
+                return `Date(${value.valueOf()})`;
+        }
+        structures: {
+            const proto = Reflect.getPrototypeOf(value);
+            if (!proto || !Reflect.getPrototypeOf(proto)) {
+                return `{${Object.entries(value).map(([k, v]) => JSON.stringify(k) + ':' + $mol_key(v))}}`;
+            }
+        }
+        handlers: {
+            if ($mol_key_handle in value) {
+                return value[$mol_key_handle]();
+            }
+        }
+        containers: {
+            const key = JSON.stringify('#' + $mol_guid());
+            $mol_key_store.set(value, key);
             return key;
-        });
+        }
     }
     $.$mol_key = $mol_key;
 })($ || ($ = {}));
@@ -2555,8 +2602,15 @@ var $;
                 (this.host ?? this.task)[this.field()] = null;
             }
             else {
-                ;
-                (this.host ?? this.task)[this.field()].delete($mol_key(this.args[0]));
+                const key = $mol_key(this.args[0]);
+                const map = (this.host ?? this.task)[this.field()];
+                if (!map.has(key))
+                    this.$.$mol_log3_warn({
+                        place: this,
+                        message: 'Absent key on destruction',
+                        hint: 'Check for $mol_key(key) is not changed',
+                    });
+                map.delete(key);
             }
         }
         put(next) {
@@ -2861,6 +2915,23 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    function $mol_wait_user_async() {
+        return new Promise(done => $mol_dom.addEventListener('click', function onclick() {
+            $mol_dom.removeEventListener('click', onclick);
+            done(null);
+        }));
+    }
+    $.$mol_wait_user_async = $mol_wait_user_async;
+    function $mol_wait_user() {
+        return this.$mol_wire_sync(this).$mol_wait_user_async();
+    }
+    $.$mol_wait_user = $mol_wait_user;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     class $mol_storage extends $mol_object2 {
         static native() {
             return this.$.$mol_dom_context.navigator.storage ?? {
@@ -2876,7 +2947,9 @@ var $;
                 return Boolean(next);
             const native = this.native();
             if (next && !$mol_mem_cached(() => this.persisted())) {
-                native.persist().then(actual => {
+                this.$.$mol_wait_user_async()
+                    .then(() => native.persist())
+                    .then(actual => {
                     setTimeout(() => this.persisted(actual, 'cache'), 5000);
                     if (actual)
                         this.$.$mol_log3_done({ place: `$mol_storage`, message: `Persist: Yes` });
@@ -3080,10 +3153,20 @@ var $;
 var $;
 (function ($) {
     let buf = new Uint8Array(2 ** 12);
+    function $mol_charset_buffer(size) {
+        if (buf.byteLength < size)
+            buf = new Uint8Array(size);
+        return buf;
+    }
+    $.$mol_charset_buffer = $mol_charset_buffer;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     function $mol_charset_encode(str) {
-        const capacity = str.length * 3;
-        if (buf.byteLength < capacity)
-            buf = new Uint8Array(capacity);
+        const buf = $mol_charset_buffer(str.length * 3);
         return buf.slice(0, $mol_charset_encode_to(str, buf));
     }
     $.$mol_charset_encode = $mol_charset_encode;
@@ -3140,13 +3223,20 @@ var $;
         path() { return ''; }
         modes() { return []; }
         write(options) {
-            return 0;
+            throw new Error('Not implemented');
         }
         read() {
-            return new Uint8Array();
+            throw new Error('Not implemented');
         }
-        truncate(size) { }
-        close() { }
+        truncate(size) {
+            throw new Error('Not implemented');
+        }
+        flush() {
+            throw new Error('Not implemented');
+        }
+        close() {
+            throw new Error('Not implemented');
+        }
         destructor() {
             this.close();
         }
@@ -3191,6 +3281,9 @@ var $;
         }
         read() {
             return $mol_file_node_buffer_normalize($node.fs.readFileSync(this.descr()));
+        }
+        flush() {
+            $node.fs.fsyncSync(this.descr());
         }
         close() {
             $node.fs.closeSync(this.descr());
@@ -3616,6 +3709,8 @@ var $;
                 if (this.$.$mol_fail_catch(error)) {
                     if (error.code === 'ENOENT')
                         return null;
+                    if (error.code === 'EPERM')
+                        return null;
                     error.message += '\n' + path;
                     this.$.$mol_fail_hidden(error);
                 }
@@ -3843,8 +3938,10 @@ var $;
 var $;
 (function ($) {
     $.$mol_gap = $mol_style_prop('mol_gap', [
+        'page',
         'block',
         'text',
+        'emoji',
         'round',
         'space',
         'blur',
@@ -3855,7 +3952,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $mol_style_attach("mol/gap/gap.css", ":root {\n\t--mol_gap_block: .75rem;\n\t--mol_gap_text: .5rem .75rem;\n\t--mol_gap_round: .25rem;\n\t--mol_gap_space: .25rem;\n\t--mol_gap_blur: .5rem;\n}\n");
+    $mol_style_attach("mol/gap/gap.css", ":root {\n\t--mol_gap_page: 3rem;\n\t--mol_gap_block: .75rem;\n\t--mol_gap_text: .5rem .75rem;\n\t--mol_gap_emoji: .5rem;\n\t--mol_gap_round: .25rem;\n\t--mol_gap_space: .25rem;\n\t--mol_gap_blur: .5rem;\n}\n");
 })($ || ($ = {}));
 
 ;
@@ -4226,6 +4323,16 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    function $mol_error_message(error) {
+        return String((error instanceof Error ? error.message : null) || error) || 'Unknown';
+    }
+    $.$mol_error_message = $mol_error_message;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     function $mol_dom_render_styles(el, styles) {
         for (let name in styles) {
             let val = styles[name];
@@ -4269,7 +4376,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $mol_style_attach("mol/view/view/view.css", "[mol_view] {\n\ttransition-property: height, width, min-height, min-width, max-width, max-height, transform, scale, translate, rotate;\n\ttransition-duration: .2s;\n\ttransition-timing-function: ease-out;\n\t-webkit-appearance: none;\n\tbox-sizing: border-box;\n\tdisplay: flex;\n\tflex-shrink: 0;\n\tcontain: style;\n\tscrollbar-color: var(--mol_theme_line) transparent;\n\tscrollbar-width: thin;\n}\t\n\n[mol_view]::selection {\n\tbackground: var(--mol_theme_line);\n}\t\n\n[mol_view]::-webkit-scrollbar {\n\twidth: .25rem;\n\theight: .25rem;\n}\n\n[mol_view]::-webkit-scrollbar-corner {\n\tbackground-color: var(--mol_theme_line);\n}\n\n[mol_view]::-webkit-scrollbar-track {\n\tbackground-color: transparent;\n}\n\n[mol_view]::-webkit-scrollbar-thumb {\n\tbackground-color: var(--mol_theme_line);\n\tborder-radius: var(--mol_gap_round);\n}\n\n[mol_view] > * {\n\tword-break: inherit;\n}\n\n[mol_view_root] {\n\tmargin: 0;\n\tpadding: 0;\n\twidth: 100%;\n\theight: 100%;\n\tbox-sizing: border-box;\n\tfont-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n\tfont-size: 1rem;\n\tline-height: 1.5rem;\n\t/* background: var(--mol_theme_back);\n\tcolor: var(--mol_theme_text); */\n\tcontain: unset; /** Fixes bg ignoring when applied to body on Chrome */\n\ttab-size: 4;\n\toverscroll-behavior: contain; /** Disable navigation gestures **/\n}\n\n@media print {\n\t[mol_view_root] {\n\t\theight: auto;\n\t}\n}\n[mol_view][mol_view_error]:not([mol_view_error=\"Promise\"], [mol_view_error=\"$mol_promise_blocker\"]) {\n\tbackground-image: repeating-linear-gradient(\n\t\t-45deg,\n\t\t#f92323,\n\t\t#f92323 .5rem,\n\t\t#ff3d3d .5rem,\n\t\t#ff3d3d 1.5rem\n\t);\n\tcolor: black;\n\talign-items: center;\n\tjustify-content: center;\n}\n\n@keyframes mol_view_wait {\n\tfrom {\n\t\topacity: .25;\n\t}\n\t20% {\n\t\topacity: .75;\n\t}\n\tto {\n\t\topacity: .25;\n\t}\n}\n\n:where([mol_view][mol_view_error=\"$mol_promise_blocker\"]),\n:where([mol_view][mol_view_error=\"Promise\"]) {\n\tbackground: var(--mol_theme_hover);\n}\n\n[mol_view][mol_view_error=\"Promise\"] {\n\tanimation: mol_view_wait 1s steps(20,end) infinite;\n}\n");
+    $mol_style_attach("mol/view/view/view.css", "@view-transition {\n\tnavigation: auto;\n}\n\n[mol_view] {\n\ttransition-property: height, width, min-height, min-width, max-width, max-height, transform, scale, translate, rotate;\n\ttransition-duration: .2s;\n\ttransition-timing-function: ease-out;\n\t-webkit-appearance: none;\n\tbox-sizing: border-box;\n\tdisplay: flex;\n\tflex-shrink: 0;\n\tcontain: style;\n\tscrollbar-color: var(--mol_theme_line) transparent;\n\tscrollbar-width: thin;\n}\t\n\n[mol_view]::selection {\n\tbackground: var(--mol_theme_line);\n}\t\n\n[mol_view]::-webkit-scrollbar {\n\twidth: .25rem;\n\theight: .25rem;\n}\n\n[mol_view]::-webkit-scrollbar-corner {\n\tbackground-color: var(--mol_theme_line);\n}\n\n[mol_view]::-webkit-scrollbar-track {\n\tbackground-color: transparent;\n}\n\n[mol_view]::-webkit-scrollbar-thumb {\n\tbackground-color: var(--mol_theme_line);\n\tborder-radius: var(--mol_gap_round);\n}\n\n[mol_view] > * {\n\tword-break: inherit;\n}\n\n[mol_view_root] {\n\tmargin: 0;\n\tpadding: 0;\n\twidth: 100%;\n\theight: 100%;\n\tbox-sizing: border-box;\n\tfont-family: system-ui, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n\tfont-size: 1rem;\n\tline-height: 1.5rem;\n\t/* background: var(--mol_theme_back);\n\tcolor: var(--mol_theme_text); */\n\tcontain: unset; /** Fixes bg ignoring when applied to body on Chrome */\n\ttab-size: 4;\n\t/*overscroll-behavior: contain; /** Disable navigation gestures **/\n}\n\n@media print {\n\t[mol_view_root] {\n\t\theight: auto;\n\t}\n}\n[mol_view][mol_view_error]:not([mol_view_error=\"Promise\"], [mol_view_error=\"$mol_promise_blocker\"]) {\n\tbackground-image: repeating-linear-gradient(\n\t\t-45deg,\n\t\t#f92323,\n\t\t#f92323 .5rem,\n\t\t#ff3d3d .5rem,\n\t\t#ff3d3d 1.5rem\n\t);\n\tcolor: black;\n\talign-items: center;\n\tjustify-content: center;\n}\n\n@keyframes mol_view_wait {\n\tfrom {\n\t\topacity: .25;\n\t}\n\t20% {\n\t\topacity: .75;\n\t}\n\tto {\n\t\topacity: .25;\n\t}\n}\n\n:where([mol_view][mol_view_error=\"$mol_promise_blocker\"]),\n:where([mol_view][mol_view_error=\"Promise\"]) {\n\tbackground: var(--mol_theme_hover);\n}\n\n[mol_view][mol_view_error=\"Promise\"] {\n\tanimation: mol_view_wait 1s steps(20,end) infinite;\n}\n");
 })($ || ($ = {}));
 
 ;
@@ -4463,8 +4570,8 @@ var $;
                 if ($mol_promise_like(error))
                     break render;
                 try {
-                    const message = error.message || error;
-                    node.innerText = message.replace(/^|$/mg, '\xA0\xA0');
+                    ;
+                    node.innerText = this.$.$mol_error_message(error).replace(/^|$/mg, '\xA0\xA0');
                 }
                 catch { }
             }
@@ -7825,7 +7932,7 @@ var $;
         finally {
             $.$mol_fail = fail;
         }
-        $mol_fail(new Error('Not failed'));
+        $mol_fail(new Error('Not failed', { cause: { expect: ErrorRight } }));
     }
     $.$mol_assert_fail = $mol_assert_fail;
     function $mol_assert_like(...args) {
@@ -7847,8 +7954,6 @@ var $;
     function $mol_assert_equal(...args) {
         for (let i = 1; i < args.length; ++i) {
             if ($mol_compare_deep(args[0], args[i]))
-                continue;
-            if (args[0] instanceof $mol_dom_context.Element && args[i] instanceof $mol_dom_context.Element && args[0].outerHTML === args[i].outerHTML)
                 continue;
             return $mol_fail(new Error(`Equality assertion failure`, { cause: { 0: args[0], [i]: args[i] } }));
         }
@@ -8169,6 +8274,29 @@ var $;
 ;
 "use strict";
 var $;
+(function ($) {
+    $mol_test({
+        'empty array'() {
+            $mol_assert_equal($mol_array_chunks([], () => true), []);
+        },
+        'one chunk'() {
+            $mol_assert_equal($mol_array_chunks([1, 2, 3, 4, 5], () => false), [[1, 2, 3, 4, 5]]);
+        },
+        'fixed size chunk'() {
+            $mol_assert_equal($mol_array_chunks([1, 2, 3, 4, 5], 3), [[1, 2, 3], [4, 5]]);
+        },
+        'first empty chunk'() {
+            $mol_assert_equal($mol_array_chunks([1, 2, 3, 4, 5], (_, i) => i === 0), [[1, 2, 3, 4, 5]]);
+        },
+        'chunk for every item'() {
+            $mol_assert_equal($mol_array_chunks([1, 2, 3, 4, 5], () => true), [[1], [2], [3], [4], [5]]);
+        },
+    });
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
 (function ($_1) {
     $mol_test({
         'tree parsing'($) {
@@ -8245,7 +8373,7 @@ var $;
             $mol_assert_equal($mol_tree2_from_json([]).toString(), '/\n');
             $mol_assert_equal($mol_tree2_from_json([false, true]).toString(), '/\n\tfalse\n\ttrue\n');
             $mol_assert_equal($mol_tree2_from_json([0, 1, 2.3]).toString(), '/\n\t0\n\t1\n\t2.3\n');
-            $mol_assert_equal($mol_tree2_from_json(new Uint16Array([1, 10, 256])).toString(), '\\\x01\x00\n\\\x00\x00\x01\n');
+            $mol_assert_equal($mol_tree2_from_json(new Uint16Array([1, 10, 255, 256, 65535])).toString(), '\\01 00 0A 00 FF 00 00 01\n\\FF FF\n');
             $mol_assert_equal($mol_tree2_from_json(['', 'foo', 'bar\nbaz']).toString(), '/\n\t\\\n\t\\foo\n\t\\\n\t\t\\bar\n\t\t\\baz\n');
             $mol_assert_equal($mol_tree2_from_json({ 'foo': false, 'bar\nbaz': 'lol' }).toString(), '*\n\tfoo false\n\t\\\n\t\t\\bar\n\t\t\\baz\n\t\t\\lol\n');
         },
@@ -9938,9 +10066,9 @@ var $;
             $mol_assert_equal($mol_key({ foo: [false] }), '{"foo":[false]}');
         },
         'Uint8Array'() {
-            $mol_assert_equal($mol_key(new Uint8Array([1, 2])), '[1,2]');
-            $mol_assert_equal($mol_key([new Uint8Array([1, 2])]), '[[1,2]]');
-            $mol_assert_equal($mol_key({ foo: new Uint8Array([1, 2]) }), '{"foo":[1,2]}');
+            $mol_assert_equal($mol_key(new Uint8Array([1, 2])), 'Uint8Array([1,2])');
+            $mol_assert_equal($mol_key([new Uint8Array([1, 2])]), '[Uint8Array([1,2])]');
+            $mol_assert_equal($mol_key({ foo: new Uint8Array([1, 2]) }), '{"foo":Uint8Array([1,2])}');
         },
         'Function'() {
             const func = () => { };
@@ -9961,21 +10089,27 @@ var $;
         },
         'Custom JSON representation'() {
             class User {
+                toJSON() { return 'jin'; }
+            }
+            $mol_assert_unique([$mol_key(new User)], [$mol_key(new User)]);
+        },
+        'Custom key handler'() {
+            class User {
                 name;
                 age;
                 constructor(name, age) {
                     this.name = name;
                     this.age = age;
                 }
-                toJSON() { return { name: this.name }; }
+                [$mol_key_handle]() { return `User(${JSON.stringify(this.name)})`; }
             }
-            $mol_assert_equal($mol_key(new User('jin', 18)), '{"name":"jin"}');
+            $mol_assert_equal($mol_key([new User('jin', 16)]), $mol_key([new User('jin', 18)]), '[User("jin")]');
         },
         'Special native classes'() {
-            $mol_assert_equal($mol_key(new Date('xyz')), 'null');
-            $mol_assert_equal($mol_key(new Date('2001-01-02T03:04:05.678Z')), '"2001-01-02T03:04:05.678Z"');
-            $mol_assert_equal($mol_key(/./), '"/./"');
-            $mol_assert_equal($mol_key(/\./gimsu), '"/\\\\./gimsu"');
+            $mol_assert_equal($mol_key(new Date('xyz')), 'Date(NaN)');
+            $mol_assert_equal($mol_key(new Date(12345)), 'Date(12345)');
+            $mol_assert_equal($mol_key(/./), '/./');
+            $mol_assert_equal($mol_key(/\./gimsu), '/\\./gimsu');
         },
     });
 })($ || ($ = {}));

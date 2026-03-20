@@ -102,6 +102,11 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    const $mol_key_handle: unique symbol;
+    const $mol_key_store: WeakMap<object, string>;
+}
+
+declare namespace $ {
     class $mol_object2 {
         static $: $;
         [Symbol.toStringTag]: string;
@@ -112,8 +117,10 @@ declare namespace $ {
         static [Symbol.toPrimitive](): any;
         static toString(): any;
         static toJSON(): any;
+        static [$mol_key_handle](): any;
         destructor(): void;
         static destructor(): void;
+        [Symbol.dispose](): void;
         toString(): string;
     }
 }
@@ -394,6 +401,10 @@ declare namespace $ {
 
 declare namespace $ {
     function $mol_tree2_from_string(this: $, str: string, uri?: string): $mol_tree2;
+}
+
+declare namespace $ {
+    function $mol_array_chunks<Item>(array: readonly Item[], rule: number | ((item: Item, index: number) => boolean)): Item[][];
 }
 
 declare namespace $ {
@@ -761,7 +772,6 @@ declare namespace $ {
 }
 
 declare namespace $ {
-    const $mol_key_store: WeakMap<object, string>;
     function $mol_key<Value>(value: Value): string;
 }
 
@@ -894,6 +904,11 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    function $mol_wait_user_async(this: $): Promise<unknown>;
+    function $mol_wait_user(this: $): unknown;
+}
+
+declare namespace $ {
     class $mol_storage extends $mol_object2 {
         static native(): StorageManager;
         static persisted(next?: boolean, cache?: 'cache'): boolean;
@@ -955,6 +970,10 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    function $mol_charset_buffer(size: number): Uint8Array<ArrayBuffer>;
+}
+
+declare namespace $ {
     function $mol_charset_encode(str: string): Uint8Array<ArrayBuffer>;
     function $mol_charset_encode_to(str: string, buf: Uint8Array<ArrayBuffer>, from?: number): number;
     function $mol_charset_encode_size(str: string): number;
@@ -974,6 +993,7 @@ declare namespace $ {
         }): number;
         read(): Uint8Array<ArrayBuffer>;
         truncate(size: number): void;
+        flush(): void;
         close(): void;
         destructor(): void;
     }
@@ -990,6 +1010,7 @@ declare namespace $ {
         }): number;
         truncate(size: number): void;
         read(): Uint8Array<ArrayBuffer>;
+        flush(): void;
         close(): void;
     }
 }
@@ -1119,7 +1140,7 @@ declare namespace $ {
 }
 
 declare namespace $ {
-    let $mol_gap: Record<"text" | "space" | "blur" | "block" | "round", $mol_style_func<"var", unknown>>;
+    let $mol_gap: Record<"text" | "space" | "blur" | "page" | "block" | "round" | "emoji", $mol_style_func<"var", unknown>>;
 }
 
 declare namespace $ {
@@ -1224,6 +1245,10 @@ declare namespace $ {
     function $mol_dom_render_events(el: Element, events: {
         [key: string]: (event: Event) => any;
     }, passive?: boolean): void;
+}
+
+declare namespace $ {
+    function $mol_error_message(this: $, error: unknown): string;
 }
 
 declare namespace $ {
@@ -1870,6 +1895,7 @@ declare namespace $ {
 		enabled( ): boolean
 		click( next?: any ): any
 		event_click( next?: any ): any
+		status( next?: readonly(any)[] ): readonly(any)[]
 		event( ): ({ 
 			click( next?: ReturnType< $mol_button['activate'] > ): ReturnType< $mol_button['activate'] >,
 			dblclick( next?: ReturnType< $mol_button['clicks'] > ): ReturnType< $mol_button['clicks'] >,
@@ -1890,7 +1916,6 @@ declare namespace $ {
 //# sourceMappingURL=button.view.tree.d.ts.map
 declare namespace $.$$ {
     class $mol_button extends $.$mol_button {
-        status(next?: any[]): any[];
         disabled(): boolean;
         event_activate(next: Event): void;
         event_key_press(event: KeyboardEvent): any;
@@ -2250,31 +2275,99 @@ declare namespace $.$$ {
 
 declare namespace $ {
 
-	type $mol_pop_bubble__align_mol_pop_1 = $mol_type_enforce<
-		ReturnType< $mol_pop['align'] >
-		,
-		ReturnType< $mol_pop_bubble['align'] >
-	>
-	type $mol_pop_bubble__content_mol_pop_2 = $mol_type_enforce<
+	export class $mol_ghost extends $mol_view {
+		Sub( ): $mol_view
+	}
+	
+}
+
+//# sourceMappingURL=ghost.view.tree.d.ts.map
+declare namespace $.$$ {
+    class $mol_ghost extends $.$mol_ghost {
+        dom_node_external(next?: Element): Element;
+        dom_node_actual(): Element;
+        dom_tree(): Element;
+        title(): string;
+        minimal_width(): number;
+        minimal_height(): number;
+    }
+}
+
+declare namespace $ {
+
+	export class $mol_follower extends $mol_ghost {
+		transform( ): string
+		Anchor( ): $mol_view
+		align( ): readonly(number)[]
+		offset( ): readonly(number)[]
+		style( ): ({ 
+			'transform': ReturnType< $mol_follower['transform'] >,
+		})  & ReturnType< $mol_ghost['style'] >
+	}
+	
+}
+
+//# sourceMappingURL=follower.view.tree.d.ts.map
+declare namespace $.$$ {
+    class $mol_follower extends $.$mol_follower {
+        pos(): {
+            left: number;
+            top: number;
+        } | null;
+        transform(): string;
+    }
+}
+
+declare namespace $ {
+}
+
+declare namespace $ {
+
+	type $mol_pop_bubble__content_mol_pop_1 = $mol_type_enforce<
 		ReturnType< $mol_pop['bubble_content'] >
 		,
 		ReturnType< $mol_pop_bubble['content'] >
 	>
-	type $mol_pop_bubble__height_max_mol_pop_3 = $mol_type_enforce<
+	type $mol_pop_bubble__height_max_mol_pop_2 = $mol_type_enforce<
 		ReturnType< $mol_pop['height_max'] >
 		,
 		ReturnType< $mol_pop_bubble['height_max'] >
 	>
+	type $mol_follower__offset_mol_pop_3 = $mol_type_enforce<
+		ReturnType< $mol_pop['bubble_offset'] >
+		,
+		ReturnType< $mol_follower['offset'] >
+	>
+	type $mol_follower__align_mol_pop_4 = $mol_type_enforce<
+		ReturnType< $mol_pop['bubble_align'] >
+		,
+		ReturnType< $mol_follower['align'] >
+	>
+	type $mol_follower__Anchor_mol_pop_5 = $mol_type_enforce<
+		ReturnType< $mol_pop['Anchor'] >
+		,
+		ReturnType< $mol_follower['Anchor'] >
+	>
+	type $mol_follower__Sub_mol_pop_6 = $mol_type_enforce<
+		ReturnType< $mol_pop['Bubble'] >
+		,
+		ReturnType< $mol_follower['Sub'] >
+	>
 	export class $mol_pop extends $mol_view {
+		bubble( ): any
 		Anchor( ): any
-		align( ): string
+		bubble_offset( ): readonly(number)[]
+		bubble_align( ): readonly(number)[]
 		bubble_content( ): readonly($mol_view_content)[]
 		height_max( ): number
 		Bubble( ): $mol_pop_bubble
+		Follower( ): $mol_follower
 		showed( next?: boolean ): boolean
 		align_vert( ): string
 		align_hor( ): string
+		align( ): string
 		prefer( ): string
+		auto( ): readonly(any)[]
 		sub( ): readonly(any)[]
 		sub_visible( ): readonly(any)[]
 	}
@@ -2282,14 +2375,13 @@ declare namespace $ {
 	export class $mol_pop_bubble extends $mol_view {
 		content( ): readonly($mol_view_content)[]
 		height_max( ): number
-		align( ): string
 		sub( ): ReturnType< $mol_pop_bubble['content'] >
 		style( ): ({ 
 			'maxHeight': ReturnType< $mol_pop_bubble['height_max'] >,
 		})  & ReturnType< $mol_view['style'] >
 		attr( ): ({ 
-			'mol_pop_align': ReturnType< $mol_pop_bubble['align'] >,
 			'tabindex': number,
+			'popover': string,
 		})  & ReturnType< $mol_view['attr'] >
 	}
 	
@@ -2304,20 +2396,9 @@ declare namespace $.$$ {
         align(): string;
         align_vert(): "suspense" | "top" | "bottom";
         align_hor(): "suspense" | "left" | "right";
-        View_port(): $mol_view;
-        view_port(): {
-            width: number;
-            height: number;
-            left: number;
-            right: number;
-            top: number;
-            bottom: number;
-        } | {
-            left: number;
-            top: number;
-            width: number;
-            height: number;
-        };
+        bubble_offset(): number[];
+        bubble_align(): number[];
+        bubble(): void;
     }
 }
 
@@ -2542,9 +2623,16 @@ declare namespace $ {
         }> | null;
         generate(params: Groups_to_params<Groups>): string | null;
         get native(): RegExp;
+        static separated<Chunk extends $mol_regexp_source, Sep extends $mol_regexp_source>(chunk: Chunk, sep: Sep): $mol_regexp<[$mol_regexp<[[Chunk], Sep] extends infer T ? T extends [[Chunk], Sep] ? T extends $mol_regexp_source[] ? $mol_type_merge<$mol_type_intersect<{ [key in Extract<keyof T, number>]: $mol_regexp_groups<T[key]>; }[Extract<keyof T, number>]>> : T extends RegExp ? Record<string, string> extends NonNullable<NonNullable<ReturnType<T["exec"]>>["groups"]> ? {} : NonNullable<NonNullable<ReturnType<T["exec"]>>["groups"]> : T extends {
+            readonly [x: string]: $mol_regexp_source;
+        } ? $mol_type_merge<$mol_type_intersect<{ [key_1 in keyof T]: $mol_type_merge<Omit<{ readonly [k in Extract<keyof T, string>]: string; }, key_1> & { readonly [k_1 in key_1]: T[key_1] extends string ? T[key_1] : string; } & $mol_regexp_groups<T[key_1]>>; }[keyof T]>> : never : never : never>, Chunk] extends infer T_1 ? T_1 extends [$mol_regexp<[[Chunk], Sep] extends infer T_2 ? T_2 extends [[Chunk], Sep] ? T_2 extends $mol_regexp_source[] ? $mol_type_merge<$mol_type_intersect<{ [key_4 in Extract<keyof T_2, number>]: $mol_regexp_groups<T_2[key_4]>; }[Extract<keyof T_2, number>]>> : T_2 extends RegExp ? Record<string, string> extends NonNullable<NonNullable<ReturnType<T_2["exec"]>>["groups"]> ? {} : NonNullable<NonNullable<ReturnType<T_2["exec"]>>["groups"]> : T_2 extends {
+            readonly [x: string]: $mol_regexp_source;
+        } ? $mol_type_merge<$mol_type_intersect<{ [key_5 in keyof T_2]: $mol_type_merge<Omit<{ readonly [k in Extract<keyof T_2, string>]: string; }, key_5> & { readonly [k_1 in key_5]: T_2[key_5] extends string ? T_2[key_5] : string; } & $mol_regexp_groups<T_2[key_5]>>; }[keyof T_2]>> : never : never : never>, Chunk] ? T_1 extends $mol_regexp_source[] ? $mol_type_merge<$mol_type_intersect<{ [key_2 in Extract<keyof T_1, number>]: $mol_regexp_groups<T_1[key_2]>; }[Extract<keyof T_1, number>]>> : T_1 extends RegExp ? Record<string, string> extends NonNullable<NonNullable<ReturnType<T_1["exec"]>>["groups"]> ? {} : NonNullable<NonNullable<ReturnType<T_1["exec"]>>["groups"]> : T_1 extends {
+            readonly [x: string]: $mol_regexp_source;
+        } ? $mol_type_merge<$mol_type_intersect<{ [key_3 in keyof T_1]: $mol_type_merge<Omit<{ readonly [k in Extract<keyof T_1, string>]: string; }, key_3> & { readonly [k_1 in key_3]: T_1[key_3] extends string ? T_1[key_3] : string; } & $mol_regexp_groups<T_1[key_3]>>; }[keyof T_1]>> : never : never : never>;
         static repeat<Source extends $mol_regexp_source>(source: Source, min?: number, max?: number): $mol_regexp<$mol_regexp_groups<Source>>;
         static repeat_greedy<Source extends $mol_regexp_source>(source: Source, min?: number, max?: number): $mol_regexp<$mol_regexp_groups<Source>>;
-        static vary<Sources extends readonly $mol_regexp_source[]>(sources: Sources): $mol_regexp<$mol_regexp_groups<Sources[number]>>;
+        static vary<Sources extends readonly $mol_regexp_source[]>(sources: Sources, flags?: string): $mol_regexp<$mol_regexp_groups<Sources[number]>>;
         static optional<Source extends $mol_regexp_source>(source: Source): $mol_regexp<$mol_regexp_groups<Source>>;
         static force_after(source: $mol_regexp_source): $mol_regexp<Record<string, string>>;
         static forbid_after(source: $mol_regexp_source): $mol_regexp<Record<string, string>>;
@@ -3003,7 +3091,7 @@ declare namespace $ {
 }
 
 declare namespace $ {
-    type $mol_time_duration_config = number | string | {
+    type $mol_time_duration_config = number | string | readonly [number, number, number, number, number, number] | {
         year?: number;
         month?: number;
         day?: number;
@@ -3026,6 +3114,7 @@ declare namespace $ {
         valueOf(): number;
         toJSON(): string;
         toString(pattern?: string): string;
+        toArray(): readonly [number, number, number, number, number, number];
         [Symbol.toPrimitive](mode: 'default' | 'number' | 'string'): string | number;
         static patterns: {
             '#Y': (duration: $mol_time_duration) => string;
@@ -3058,7 +3147,7 @@ declare namespace $ {
         saturday = 5,
         sunday = 6
     }
-    type $mol_time_moment_config = number | Date | string | {
+    type $mol_time_moment_config = number | Date | string | readonly (number | undefined)[] | {
         year?: number;
         month?: number;
         day?: number;
@@ -3088,6 +3177,7 @@ declare namespace $ {
         valueOf(): number;
         toJSON(): string;
         toString(pattern?: string): string;
+        toArray(): readonly [number | undefined, number | undefined, number | undefined, number | undefined, number | undefined, number | undefined, number | undefined];
         [Symbol.toPrimitive](mode: 'default' | 'number' | 'string'): string | number;
         [$mol_dev_format_head](): any[];
         static patterns: {
@@ -3395,6 +3485,15 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    class $mol_dom_event<EventType extends Event> extends $mol_object {
+        readonly native: EventType;
+        constructor(native: EventType);
+        prevented(next?: boolean): boolean;
+        static wrap<EventType extends Event>(event: EventType): $mol_dom_event<EventType>;
+    }
+}
+
+declare namespace $ {
 }
 
 declare namespace $ {
@@ -3599,7 +3698,7 @@ declare namespace $ {
 declare namespace $ {
 
 	type $mol_button_open_native__files_mol_button_open_1 = $mol_type_enforce<
-		ReturnType< $mol_button_open['files'] >
+		ReturnType< $mol_button_open['files_handled'] >
 		,
 		ReturnType< $mol_button_open_native['files'] >
 	>
@@ -3615,7 +3714,8 @@ declare namespace $ {
 	>
 	export class $mol_button_open extends $mol_button_minor {
 		Icon( ): $mol_icon_upload
-		files( next?: readonly(any)[] ): readonly(any)[]
+		files( next?: readonly(File)[] ): readonly(File)[]
+		files_handled( next?: ReturnType< $mol_button_open['files'] > ): ReturnType< $mol_button_open['files'] >
 		accept( ): string
 		multiple( ): boolean
 		Native( ): $mol_button_open_native
@@ -3627,7 +3727,7 @@ declare namespace $ {
 		multiple( ): boolean
 		picked( next?: any ): any
 		dom_name( ): string
-		files( next?: readonly(any)[] ): readonly(any)[]
+		files( next?: readonly(File)[] ): readonly(File)[]
 		attr( ): ({ 
 			'type': string,
 			'accept': ReturnType< $mol_button_open_native['accept'] >,
@@ -3642,6 +3742,9 @@ declare namespace $ {
 
 //# sourceMappingURL=open.view.tree.d.ts.map
 declare namespace $.$$ {
+    class $mol_button_open extends $.$mol_button_open {
+        files_handled(next?: readonly File[]): readonly File[];
+    }
     class $mol_button_open_native extends $.$mol_button_open_native {
         dom_node(): HTMLInputElement;
         picked(): void;
@@ -3653,53 +3756,47 @@ declare namespace $ {
 
 declare namespace $ {
 
-	type $mol_row__sub_mol_attach_1 = $mol_type_enforce<
-		ReturnType< $mol_attach['content'] >
-		,
-		ReturnType< $mol_row['sub'] >
-	>
-	type $mol_image__title_mol_attach_2 = $mol_type_enforce<
+	type $mol_image__title_mol_attach_1 = $mol_type_enforce<
 		string
 		,
 		ReturnType< $mol_image['title'] >
 	>
-	type $mol_image__uri_mol_attach_3 = $mol_type_enforce<
+	type $mol_image__uri_mol_attach_2 = $mol_type_enforce<
 		ReturnType< $mol_attach['item_uri'] >
 		,
 		ReturnType< $mol_image['uri'] >
 	>
-	type $mol_button_open__title_mol_attach_4 = $mol_type_enforce<
-		ReturnType< $mol_attach['attach_title'] >
-		,
-		ReturnType< $mol_button_open['title'] >
-	>
-	type $mol_button_open__files_mol_attach_5 = $mol_type_enforce<
-		ReturnType< $mol_attach['attach_new'] >
-		,
-		ReturnType< $mol_button_open['files'] >
-	>
-	type $mol_button_minor__click_mol_attach_6 = $mol_type_enforce<
+	type $mol_button_minor__click_mol_attach_3 = $mol_type_enforce<
 		ReturnType< $mol_attach['item_drop'] >
 		,
 		ReturnType< $mol_button_minor['click'] >
 	>
-	type $mol_button_minor__sub_mol_attach_7 = $mol_type_enforce<
+	type $mol_button_minor__sub_mol_attach_4 = $mol_type_enforce<
 		readonly(any)[]
 		,
 		ReturnType< $mol_button_minor['sub'] >
 	>
+	type $mol_button_open__title_mol_attach_5 = $mol_type_enforce<
+		ReturnType< $mol_attach['attach_title'] >
+		,
+		ReturnType< $mol_button_open['title'] >
+	>
+	type $mol_button_open__files_mol_attach_6 = $mol_type_enforce<
+		ReturnType< $mol_attach['attach_new'] >
+		,
+		ReturnType< $mol_button_open['files'] >
+	>
 	export class $mol_attach extends $mol_view {
-		content( ): readonly($mol_view)[]
-		Content( ): $mol_row
-		attach_title( ): string
-		attach_new( next?: any ): any
 		item_drop( id: any, next?: any ): any
 		item_uri( id: any): string
 		Image( id: any): $mol_image
-		items( next?: readonly(string)[] ): readonly(string)[]
-		sub( ): readonly(any)[]
-		Add( ): $mol_button_open
 		Item( id: any): $mol_button_minor
+		attach_title( ): string
+		attach_new( next?: any ): any
+		Add( ): $mol_button_open
+		content( ): readonly($mol_view)[]
+		items( next?: readonly(string)[] ): readonly(string)[]
+		sub( ): ReturnType< $mol_attach['content'] >
 	}
 	
 }
@@ -3708,7 +3805,7 @@ declare namespace $ {
 declare namespace $.$$ {
     class $mol_attach extends $.$mol_attach {
         attach_new(files: File[]): void;
-        content(): ($mol_button_minor | $mol_button_open)[];
+        content(): ($mol_button_minor | $.$mol_button_open)[];
         item_uri(index: number): string;
         item_drop(index: number, event?: Event): void;
     }
@@ -3719,15 +3816,15 @@ declare namespace $ {
 
 declare namespace $ {
 
-	type $mol_paragraph__dom_name_mol_section_1 = $mol_type_enforce<
+	type $mol_view__dom_name_mol_section_1 = $mol_type_enforce<
 		ReturnType< $mol_section['title_dom_name'] >
 		,
-		ReturnType< $mol_paragraph['dom_name'] >
+		ReturnType< $mol_view['dom_name'] >
 	>
-	type $mol_paragraph__title_mol_section_2 = $mol_type_enforce<
-		ReturnType< $mol_section['title'] >
+	type $mol_view__sub_mol_section_2 = $mol_type_enforce<
+		readonly(any)[]
 		,
-		ReturnType< $mol_paragraph['title'] >
+		ReturnType< $mol_view['sub'] >
 	>
 	type $mol_view__sub_mol_section_3 = $mol_type_enforce<
 		ReturnType< $mol_section['tools'] >
@@ -3746,7 +3843,7 @@ declare namespace $ {
 	>
 	export class $mol_section extends $mol_list {
 		title_dom_name( ): string
-		Title( ): $mol_paragraph
+		Title( ): $mol_view
 		tools( ): readonly(any)[]
 		Tools( ): $mol_view
 		head( ): readonly(any)[]

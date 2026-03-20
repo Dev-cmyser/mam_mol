@@ -13,8 +13,8 @@
 
 ## Supported types
 
-- Primitives: `null`, `undefined`, `boolean`, `number`, `bigint` (up to 8B), `string`.
-- Buffers: `Uint8Array`, `Uint16Array`, `Uint32Array`, `BigUint64Array`, `Int8Array`, `Int16Array`, `Int32Array`, `BigInt64Array`, `Float16Array` (only read), `Float32Array`, `Float64Array`.
+- Primitives: `null`, `undefined`, `boolean`, `number`, `bigint`, `string`.
+- Buffers: `Uint*Array`, `Int*Array`, `BigUint64Array`, `BigInt64Array`, `Float*Array`.
 - Objects: `Array`, `Object`, `Date`, `Map`, `Set`, `Element`.
 
 ## Comparison
@@ -25,16 +25,16 @@
 
 |                | $mol_vary | cbor-x      | msgpackr
 |----------------|-----------|-------------|---------
-| Language       | ✅ TS     | ✅ TS      | ❌ JS    
-| Performance    | ✅ 100%   | ✅ 100%    | ✅ 100%  
-| Packed Size    | ✅ 100%   | ❌ +33%    | ❌ +25%  
-| Lib Size       | ✅ 3KB    | ❌ 11 KB   | ❌ 11 KB 
-| Compatibility  | ✅ std    | ⭕ ext-std | ❌ ext   
+| Language       | ✅ TS     | ✅ TS+DTS  | ❌ JS+DTS
+| Performance    | ⭕ 100%   | ✅ +20%    | ✅ +50%
+| Packed Size    | ✅ 100%   | ❌ +40%    | ❌ +30%
+| Lib Size       | ✅ 4KB    | ❌ 11 KB   | ❌ 11 KB
+| Compatibility  | ✅ std    | ⭕ ext-std | ❌ ext
 
 [Benchmark](https://perf.js.hyoo.ru/#!bench=j1peaq_k376h9) results:
 
 ### Chrome 142
-![](https://habrastorage.org/webt/qk/nm/vg/qknmvgaazzoe2y5nuyyla88cq3s.png)
+![](https://habrastorage.org/webt/72/hw/dl/72hwdlo7d_ijur4as3epgiynkpc.png)
 
 ## API
 
@@ -55,13 +55,13 @@ import { $mol_vary } from 'mol_vary'
 ### Binarization
 
 ```ts
-const buffer = $mol_vary.pack( data )
+const buffer = $mol_vary.pack( list )
 ```
 
 ### Pasing
 
 ```ts
-const data = $mol_vary.take( buffer )
+const list = $mol_vary.take( buffer )
 ```
 
 ### Register custom types
@@ -76,12 +76,20 @@ class Foo {
 	
 }
 
-$mol_vary.type(
+// Make isolated Vary
+const Vary = $mol_vary.zone()
+
+// Add custom type support
+Vary.type(
 	Foo, // Instance super class
 	[ 'a', 'b' ], // Keys as shape
 	foo => [ foo.a, foo.b ], // Vals extractor
-	( a, b )=> new Foo( a, b ), // Factory from vals
+	([ a, b ])=> new Foo( a, b ), // Factory from vals
 )
+
+// Usage
+const buffer = Vary.pack([ new Foo( 3, 4 ) ])
+const foo = Vary.take( buffer )[0]
 ```
 
 ## Internals

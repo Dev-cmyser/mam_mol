@@ -90,15 +90,15 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    const catched = new WeakMap();
+    const catched = new WeakSet();
     function $mol_fail_catch(error) {
         if (typeof error !== 'object')
             return false;
         if ($mol_promise_like(error))
             $mol_fail_hidden(error);
-        if (catched.get(error))
+        if (catched.has(error))
             return false;
-        catched.set(error, true);
+        catched.add(error);
         return true;
     }
     $.$mol_fail_catch = $mol_fail_catch;
@@ -113,6 +113,7 @@ var $;
             return handler();
         }
         catch (error) {
+            console.error(error);
             return error;
         }
     }
@@ -374,6 +375,16 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    $.$mol_key_handle = Symbol.for('$mol_key_handle');
+    $.$mol_key_store = new WeakMap();
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
+    if (!Symbol.dispose)
+        Symbol.dispose = Symbol('Symbol.dispose');
     class $mol_object2 {
         static $ = $;
         [Symbol.toStringTag];
@@ -404,8 +415,14 @@ var $;
         static toJSON() {
             return this.toString();
         }
+        static [$mol_key_handle]() {
+            return this.toString();
+        }
         destructor() { }
         static destructor() { }
+        [Symbol.dispose]() {
+            this.destructor();
+        }
         toString() {
             return this[Symbol.toStringTag] || this.constructor.name + '<>';
         }
@@ -1737,6 +1754,30 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    function $mol_array_chunks(array, rule) {
+        const br = typeof rule === 'number' ? (_, i) => i % rule === 0 : rule;
+        let chunk = [];
+        const chunks = [];
+        for (let i = 0; i < array.length; ++i) {
+            const item = array[i];
+            if (br(item, i)) {
+                if (chunk.length)
+                    chunks.push(chunk);
+                chunk = [];
+            }
+            chunk.push(item);
+        }
+        if (chunk.length)
+            chunks.push(chunk);
+        return chunks;
+    }
+    $.$mol_array_chunks = $mol_array_chunks;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
     function $mol_tree2_from_json(json, span = $mol_span.unknown) {
         if (typeof json === 'boolean' || typeof json === 'number' || json === null) {
             return new $mol_tree2(String(json), '', [], span);
@@ -1753,7 +1794,9 @@ var $;
         }
         if (ArrayBuffer.isView(json)) {
             const buf = new Uint8Array(json.buffer, json.byteOffset, json.byteLength);
-            return $mol_tree2.data(String.fromCharCode(...buf), [], span);
+            const codes = [...buf].map(b => b.toString(16).toUpperCase().padStart(2, '0'));
+            const str = $mol_array_chunks(codes, 8).map(c => c.join(' ')).join('\n');
+            return $mol_tree2.data(str, [], span);
         }
         if (json instanceof Date) {
             return new $mol_tree2('', json.toISOString(), [], span);
@@ -1836,7 +1879,7 @@ var $;
     function $mol_log3_node_make(level, output, type, color) {
         return function $mol_log3_logger(event) {
             if (!event.time)
-                event = { time: new Date().toISOString(), ...event };
+                event = { ...event, time: new Date().toISOString() };
             let tree = this.$mol_tree2_from_json(event);
             tree = tree.struct(type, tree.kids);
             let str = color(tree.toString());

@@ -335,6 +335,11 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    const $mol_key_handle: unique symbol;
+    const $mol_key_store: WeakMap<object, string>;
+}
+
+declare namespace $ {
     class $mol_object2 {
         static $: $;
         [Symbol.toStringTag]: string;
@@ -345,8 +350,10 @@ declare namespace $ {
         static [Symbol.toPrimitive](): any;
         static toString(): any;
         static toJSON(): any;
+        static [$mol_key_handle](): any;
         destructor(): void;
         static destructor(): void;
+        [Symbol.dispose](): void;
         toString(): string;
     }
 }
@@ -515,7 +522,6 @@ declare namespace $ {
 }
 
 declare namespace $ {
-    const $mol_key_store: WeakMap<object, string>;
     function $mol_key<Value>(value: Value): string;
 }
 
@@ -603,7 +609,11 @@ declare namespace $ {
 }
 
 declare namespace $ {
-    function $mol_try<Result>(handler2: () => Result): Result | Error;
+    function $mol_try<Result>(handler: () => Result): Result | Error;
+}
+
+declare namespace $ {
+    function $mol_try_web<Result>(handler2: () => Result): Result | Error;
 }
 
 declare namespace $ {
@@ -721,6 +731,11 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    function $mol_wait_user_async(this: $): Promise<unknown>;
+    function $mol_wait_user(this: $): unknown;
+}
+
+declare namespace $ {
     class $mol_storage extends $mol_object2 {
         static native(): StorageManager;
         static persisted(next?: boolean, cache?: 'cache'): boolean;
@@ -762,7 +777,7 @@ declare namespace $ {
 }
 
 declare namespace $ {
-    let $mol_gap: Record<"text" | "blur" | "block" | "space" | "round", $mol_style_func<"var", unknown>>;
+    let $mol_gap: Record<"text" | "blur" | "page" | "block" | "space" | "round" | "emoji", $mol_style_func<"var", unknown>>;
 }
 
 declare namespace $ {
@@ -987,6 +1002,10 @@ declare namespace $ {
     function $mol_dom_render_events(el: Element, events: {
         [key: string]: (event: Event) => any;
     }, passive?: boolean): void;
+}
+
+declare namespace $ {
+    function $mol_error_message(this: $, error: unknown): string;
 }
 
 declare namespace $ {

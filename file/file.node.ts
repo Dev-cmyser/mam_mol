@@ -89,6 +89,7 @@ namespace $ {
 			} catch( error: any ) {
 				if (this.$.$mol_fail_catch(error)) {
 					if (error.code === 'ENOENT') return null
+					if (error.code === 'EPERM') return null
 					error.message += '\n' + path
 					this.$.$mol_fail_hidden(error)
 				}
@@ -183,7 +184,7 @@ namespace $ {
 
 		@ $mol_mem_key
 		override readable(opts: { start?: number, end?: number }) {
-			const { Readable } = $node['node:stream'] as typeof import('stream')
+			const { Readable } = $node['node:stream'] as typeof import('node:stream')
 			const stream = $node.fs.createReadStream(this.path(), {
 				flags: 'r',
 				autoClose: true,
@@ -197,7 +198,7 @@ namespace $ {
 
 		@ $mol_mem
 		override writable(opts?: { start?: number }) {
-			const { Writable } = $node['node:stream'] as typeof import('stream')
+			const { Writable } = $node['node:stream'] as typeof import('node:stream')
 			const stream = $node.fs.createWriteStream(this.path(), {
 				flags: 'w+',
 				autoClose: true,

@@ -1041,7 +1041,7 @@ var $;
         finally {
             $.$mol_fail = fail;
         }
-        $mol_fail(new Error('Not failed'));
+        $mol_fail(new Error('Not failed', { cause: { expect: ErrorRight } }));
     }
     $.$mol_assert_fail = $mol_assert_fail;
     function $mol_assert_like(...args) {
@@ -1063,8 +1063,6 @@ var $;
     function $mol_assert_equal(...args) {
         for (let i = 1; i < args.length; ++i) {
             if ($mol_compare_deep(args[0], args[i]))
-                continue;
-            if (args[0] instanceof $mol_dom_context.Element && args[i] instanceof $mol_dom_context.Element && args[0].outerHTML === args[i].outerHTML)
                 continue;
             return $mol_fail(new Error(`Equality assertion failure`, { cause: { 0: args[0], [i]: args[i] } }));
         }
@@ -1261,6 +1259,7 @@ var $;
         },
         'normalization'() {
             $mol_assert_equal(new $mol_time_duration('P1Y2M3DT44h55m66s').normal.toString(), 'P1Y2M4DT20H56M6S');
+            $mol_assert_equal(new $mol_time_duration('P-1Y-2M-3DT-44h-55m-66s').normal.toString(), 'P-1Y-2M-4DT-20H-56M-6S');
         },
         'comparison'() {
             const iso = 'P1Y1M1DT1h1m1s';
@@ -1333,6 +1332,11 @@ var $;
         'comparison'() {
             const iso = '2021-01-02T03:04:05.678+09:10';
             $mol_assert_equal(new $mol_time_moment(iso), new $mol_time_moment(iso));
+        },
+        'array keeps zero offset'() {
+            const moment = new $mol_time_moment('2026-01-25T16:37:36.129+00:00');
+            const restored = new $mol_time_moment(moment.toArray());
+            $mol_assert_equal(restored.offset?.count('PT1m'), 0);
         },
     });
 })($ || ($ = {}));

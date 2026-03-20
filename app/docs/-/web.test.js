@@ -1652,9 +1652,9 @@ var $;
             $mol_assert_equal($mol_key({ foo: [false] }), '{"foo":[false]}');
         },
         'Uint8Array'() {
-            $mol_assert_equal($mol_key(new Uint8Array([1, 2])), '[1,2]');
-            $mol_assert_equal($mol_key([new Uint8Array([1, 2])]), '[[1,2]]');
-            $mol_assert_equal($mol_key({ foo: new Uint8Array([1, 2]) }), '{"foo":[1,2]}');
+            $mol_assert_equal($mol_key(new Uint8Array([1, 2])), 'Uint8Array([1,2])');
+            $mol_assert_equal($mol_key([new Uint8Array([1, 2])]), '[Uint8Array([1,2])]');
+            $mol_assert_equal($mol_key({ foo: new Uint8Array([1, 2]) }), '{"foo":Uint8Array([1,2])}');
         },
         'Function'() {
             const func = () => { };
@@ -1675,21 +1675,27 @@ var $;
         },
         'Custom JSON representation'() {
             class User {
+                toJSON() { return 'jin'; }
+            }
+            $mol_assert_unique([$mol_key(new User)], [$mol_key(new User)]);
+        },
+        'Custom key handler'() {
+            class User {
                 name;
                 age;
                 constructor(name, age) {
                     this.name = name;
                     this.age = age;
                 }
-                toJSON() { return { name: this.name }; }
+                [$mol_key_handle]() { return `User(${JSON.stringify(this.name)})`; }
             }
-            $mol_assert_equal($mol_key(new User('jin', 18)), '{"name":"jin"}');
+            $mol_assert_equal($mol_key([new User('jin', 16)]), $mol_key([new User('jin', 18)]), '[User("jin")]');
         },
         'Special native classes'() {
-            $mol_assert_equal($mol_key(new Date('xyz')), 'null');
-            $mol_assert_equal($mol_key(new Date('2001-01-02T03:04:05.678Z')), '"2001-01-02T03:04:05.678Z"');
-            $mol_assert_equal($mol_key(/./), '"/./"');
-            $mol_assert_equal($mol_key(/\./gimsu), '"/\\\\./gimsu"');
+            $mol_assert_equal($mol_key(new Date('xyz')), 'Date(NaN)');
+            $mol_assert_equal($mol_key(new Date(12345)), 'Date(12345)');
+            $mol_assert_equal($mol_key(/./), '/./');
+            $mol_assert_equal($mol_key(/\./gimsu), '/\\./gimsu');
         },
     });
 })($ || ($ = {}));
@@ -2433,6 +2439,39 @@ var $;
         },
         'encode surrogate pair'() {
             $mol_assert_equal($mol_charset_encode('😀'), new Uint8Array([0xf0, 0x9f, 0x98, 0x80]));
+        },
+    });
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
+    $mol_test({
+        'auto name'() {
+            class Invalid extends $mol_error_mix {
+            }
+            const mix = new Invalid('foo');
+            $mol_assert_equal(mix.name, 'Invalid_Error');
+        },
+        'simpe mix'() {
+            const mix = new $mol_error_mix('foo', {}, new Error('bar'), new Error('lol'));
+            $mol_assert_equal(mix.message, 'foo');
+            $mol_assert_equal(mix.errors.map(e => e.message), ['bar', 'lol']);
+        },
+        'provide additional info'() {
+            class Invalid extends $mol_error_mix {
+            }
+            const mix = new $mol_error_mix('Wrong password', {}, new Invalid('Too short', { value: 'p@ssw0rd', hint: '> 8 letters' }), new Invalid('Too simple', { value: 'p@ssw0rd', hint: 'need capital letter' }));
+            const hints = [];
+            if (mix instanceof $mol_error_mix) {
+                for (const er of mix.errors) {
+                    if (er instanceof Invalid) {
+                        hints.push(er.cause?.hint ?? '');
+                    }
+                }
+            }
+            $mol_assert_equal(hints, ['> 8 letters', 'need capital letter']);
         },
     });
 })($ || ($ = {}));
@@ -3195,39 +3234,6 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $mol_test({
-        'auto name'() {
-            class Invalid extends $mol_error_mix {
-            }
-            const mix = new Invalid('foo');
-            $mol_assert_equal(mix.name, 'Invalid_Error');
-        },
-        'simpe mix'() {
-            const mix = new $mol_error_mix('foo', {}, new Error('bar'), new Error('lol'));
-            $mol_assert_equal(mix.message, 'foo');
-            $mol_assert_equal(mix.errors.map(e => e.message), ['bar', 'lol']);
-        },
-        'provide additional info'() {
-            class Invalid extends $mol_error_mix {
-            }
-            const mix = new $mol_error_mix('Wrong password', {}, new Invalid('Too short', { value: 'p@ssw0rd', hint: '> 8 letters' }), new Invalid('Too simple', { value: 'p@ssw0rd', hint: 'need capital letter' }));
-            const hints = [];
-            if (mix instanceof $mol_error_mix) {
-                for (const er of mix.errors) {
-                    if (er instanceof Invalid) {
-                        hints.push(er.cause?.hint ?? '');
-                    }
-                }
-            }
-            $mol_assert_equal(hints, ['> 8 letters', 'need capital letter']);
-        },
-    });
-})($ || ($ = {}));
-
-;
-"use strict";
-var $;
-(function ($) {
     let sex;
     (function (sex) {
         sex[sex["male"] = 0] = "male";
@@ -3489,10 +3495,10 @@ var $;
                     return prev;
                 },
             });
-            $mol_assert_equal(list, $mol_jsx("body", null,
+            $mol_assert_equal(list.outerHTML, ($mol_jsx("body", null,
                 $mol_jsx("p", { "data-rev": "old" }, "a"),
                 $mol_jsx("p", { "data-rev": "old" }, "b"),
-                $mol_jsx("p", { "data-rev": "old" }, "c")));
+                $mol_jsx("p", { "data-rev": "old" }, "c"))).outerHTML);
         },
         'insert items'() {
             const list = $mol_jsx("body", null,
@@ -3514,13 +3520,13 @@ var $;
                     return prev;
                 },
             });
-            $mol_assert_equal(list, $mol_jsx("body", null,
+            $mol_assert_equal(list.outerHTML, ($mol_jsx("body", null,
                 $mol_jsx("p", { "data-rev": "old" }, "a"),
                 $mol_jsx("p", { "data-rev": "old" }, "b"),
                 $mol_jsx("p", { "data-rev": "new" }, "X"),
                 $mol_jsx("p", { "data-rev": "new" }, "Y"),
                 $mol_jsx("p", { "data-rev": "old" }, "c"),
-                $mol_jsx("p", { "data-rev": "old" }, "d")));
+                $mol_jsx("p", { "data-rev": "old" }, "d"))).outerHTML);
         },
         'append items'() {
             const list = $mol_jsx("body", null,
@@ -3539,10 +3545,10 @@ var $;
                     return prev;
                 },
             });
-            $mol_assert_equal(list, $mol_jsx("body", null,
+            $mol_assert_equal(list.outerHTML, ($mol_jsx("body", null,
                 $mol_jsx("p", { "data-rev": "old" }, "a"),
                 $mol_jsx("p", { "data-rev": "new" }, "b"),
-                $mol_jsx("p", { "data-rev": "new" }, "c")));
+                $mol_jsx("p", { "data-rev": "new" }, "c"))).outerHTML);
         },
         'split item'() {
             const list = $mol_jsx("body", null,
@@ -3563,11 +3569,11 @@ var $;
                     return prev;
                 },
             });
-            $mol_assert_equal(list, $mol_jsx("body", null,
+            $mol_assert_equal(list.outerHTML, ($mol_jsx("body", null,
                 $mol_jsx("p", { "data-rev": "old" }, "a"),
                 $mol_jsx("p", { "data-rev": "new" }, "b"),
                 $mol_jsx("p", { "data-rev": "up" }, "c"),
-                $mol_jsx("p", { "data-rev": "old" }, "d")));
+                $mol_jsx("p", { "data-rev": "old" }, "d"))).outerHTML);
         },
         'drop items'() {
             const list = $mol_jsx("body", null,
@@ -3591,11 +3597,11 @@ var $;
                     return prev;
                 },
             });
-            $mol_assert_equal(list, $mol_jsx("body", null,
+            $mol_assert_equal(list.outerHTML, ($mol_jsx("body", null,
                 $mol_jsx("p", { "data-rev": "old" }, "A"),
                 $mol_jsx("p", { "data-rev": "old" }, "B"),
                 $mol_jsx("p", { "data-rev": "old" }, "C"),
-                $mol_jsx("p", { "data-rev": "old" }, "D")));
+                $mol_jsx("p", { "data-rev": "old" }, "D"))).outerHTML);
         },
         'update items'() {
             const list = $mol_jsx("body", null,
@@ -3617,11 +3623,11 @@ var $;
                     return prev;
                 },
             });
-            $mol_assert_equal(list, $mol_jsx("body", null,
+            $mol_assert_equal(list.outerHTML, ($mol_jsx("body", null,
                 $mol_jsx("p", { "data-rev": "old" }, "a"),
                 $mol_jsx("p", { "data-rev": "up" }, "X"),
                 $mol_jsx("p", { "data-rev": "up" }, "Y"),
-                $mol_jsx("p", { "data-rev": "old" }, "d")));
+                $mol_jsx("p", { "data-rev": "old" }, "d"))).outerHTML);
         },
     });
 })($ || ($ = {}));
@@ -4963,6 +4969,7 @@ var $;
         },
         'normalization'() {
             $mol_assert_equal(new $mol_time_duration('P1Y2M3DT44h55m66s').normal.toString(), 'P1Y2M4DT20H56M6S');
+            $mol_assert_equal(new $mol_time_duration('P-1Y-2M-3DT-44h-55m-66s').normal.toString(), 'P-1Y-2M-4DT-20H-56M-6S');
         },
         'comparison'() {
             const iso = 'P1Y1M1DT1h1m1s';
@@ -5035,6 +5042,11 @@ var $;
         'comparison'() {
             const iso = '2021-01-02T03:04:05.678+09:10';
             $mol_assert_equal(new $mol_time_moment(iso), new $mol_time_moment(iso));
+        },
+        'array keeps zero offset'() {
+            const moment = new $mol_time_moment('2026-01-25T16:37:36.129+00:00');
+            const restored = new $mol_time_moment(moment.toArray());
+            $mol_assert_equal(restored.offset?.count('PT1m'), 0);
         },
     });
 })($ || ($ = {}));
@@ -5154,13 +5166,29 @@ var $;
         'serial & parse'() {
             const data = [
                 { foo: '123', bar: '456' },
-                { foo: 'x"xx', bar: 'y"y"y' },
+                { foo: 'x"xx', bar: 'y,y\ny' },
             ];
-            $mol_assert_like($mol_csv_parse($mol_csv_serial(data)), data);
+            $mol_assert_equal($mol_csv_parse($mol_csv_serial(data)), data);
         },
         'parse & serial'() {
-            const csv = 'foo,bar\n"123","456"\n"x""xx","y""y""y"';
-            $mol_assert_like($mol_csv_serial($mol_csv_parse(csv)), csv);
+            const csv = '"foo","bar"\n"123","456"\n"x""xx","y,y\ny"';
+            $mol_assert_equal($mol_csv_serial($mol_csv_parse(csv)), csv);
+        },
+        'one row'() {
+            const csv = '"foo","y,y\ny"';
+            $mol_assert_equal($mol_csv_serial_table($mol_csv_parse_table(csv)), csv);
+        },
+        'one col'() {
+            const csv = '"foo"\n"y,y\ny"';
+            $mol_assert_equal($mol_csv_serial($mol_csv_parse(csv)), csv);
+        },
+        'one cell'() {
+            const csv = '"y,y\ny"';
+            $mol_assert_equal($mol_csv_serial_table($mol_csv_parse_table(csv)), csv);
+        },
+        'tab separated'() {
+            const tsv = '"foo"\t"bar"\n"123"\t"456"\n"x""xx"\t"y,y\ny"';
+            $mol_assert_equal($mol_csv_serial($mol_csv_parse(tsv, '\t'), '\t'), tsv);
         },
     });
 })($ || ($ = {}));
@@ -6026,17 +6054,30 @@ var $;
 (function ($) {
     $mol_test({
         'Word making'() {
-            $mol_assert_ok($mol_spell_ru.test('пил'));
-            $mol_assert_ok($mol_spell_ru.test('пила'));
-            $mol_assert_ok($mol_spell_ru.test('запил'));
-            $mol_assert_ok($mol_spell_ru.test('завопил'));
-            $mol_assert_ok($mol_spell_ru.test('пилил'));
-            $mol_assert_ok($mol_spell_ru.test('пилоел'));
-            $mol_assert_ok($mol_spell_ru.test('недоперепилоперенедоела'));
+            $mol_assert_equal(true, $mol_spell_ru.check('пил'));
+            $mol_assert_equal(true, $mol_spell_ru.check('пила'));
+            $mol_assert_equal(true, $mol_spell_ru.check('запил'));
+            $mol_assert_equal(true, $mol_spell_ru.check('завопил'));
+            $mol_assert_equal(true, $mol_spell_ru.check('пилил'));
+            $mol_assert_equal(true, $mol_spell_ru.check('пилоел'));
+            $mol_assert_equal(true, $mol_spell_ru.check('недоперепилоперенедоела'));
         },
         'Wrong words'() {
-            $mol_assert_not($mol_spell_ru.test('недперепила'));
-            $mol_assert_not($mol_spell_ru.test('недоbook'));
+            $mol_assert_equal(false, $mol_spell_ru.check('недперепила'));
+            $mol_assert_equal(false, $mol_spell_ru.check('недоbook'));
+        },
+        'Segmentation'() {
+            $mol_assert_equal($mol_spell_ru.split('пил'), ["пил"]);
+            $mol_assert_equal($mol_spell_ru.split('пила'), ["пил", "а"]);
+            $mol_assert_equal($mol_spell_ru.split('запил'), ["за", "пил"]);
+            $mol_assert_equal($mol_spell_ru.split('завопил'), ["за", "во", "пил"]);
+            $mol_assert_equal($mol_spell_ru.split('пилил'), ["пил", "ил"]);
+            $mol_assert_equal($mol_spell_ru.split('пилоел'), ["пил", "ое", "л"]);
+            $mol_assert_equal($mol_spell_ru.split('сине-зелёное'), ["син", "е", "-", "зелён", "ое"]);
+            $mol_assert_equal($mol_spell_ru.split('недоперепила'), ["недо", "пере", "пил", "а"]);
+            $mol_assert_equal($mol_spell_ru.split('перенедоела'), ["пере", "недо", "е", "л", "а"]);
+            $mol_assert_equal($mol_spell_ru.split('недоперепилоперенедоела'), ["недо", "пере", "пил", "о", "пере", "недо", "е", "л", "а"]);
+            $mol_assert_equal($mol_spell_ru.split('недперепилъ'), ["н", "ед", "пере", "пил", "ъ"]);
         },
     });
 })($ || ($ = {}));
@@ -6047,10 +6088,10 @@ var $;
 (function ($) {
     $mol_test({
         'Known language'() {
-            $mol_assert_ok($mol_spell_any.test('пила'));
+            $mol_assert_ok($mol_spell_any.check('пила'));
         },
         'Unknown language'() {
-            $mol_assert_not($mol_spell_any.test('пиri'));
+            $mol_assert_not($mol_spell_any.check('пиri'));
         },
     });
 })($ || ($ = {}));

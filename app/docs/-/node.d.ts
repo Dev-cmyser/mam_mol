@@ -109,6 +109,11 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    const $mol_key_handle: unique symbol;
+    const $mol_key_store: WeakMap<object, string>;
+}
+
+declare namespace $ {
     class $mol_object2 {
         static $: $;
         [Symbol.toStringTag]: string;
@@ -119,8 +124,10 @@ declare namespace $ {
         static [Symbol.toPrimitive](): any;
         static toString(): any;
         static toJSON(): any;
+        static [$mol_key_handle](): any;
         destructor(): void;
         static destructor(): void;
+        [Symbol.dispose](): void;
         toString(): string;
     }
 }
@@ -404,6 +411,10 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    function $mol_array_chunks<Item>(array: readonly Item[], rule: number | ((item: Item, index: number) => boolean)): Item[][];
+}
+
+declare namespace $ {
     function $mol_tree2_from_json(json: any, span?: $mol_span): $mol_tree2;
 }
 
@@ -443,7 +454,7 @@ declare namespace $ {
         static getter<Host, Args extends readonly unknown[], Result>(task: (this: Host, ...args: Args) => Result): (host: Host, args: Args) => $mol_wire_task<Host, Args, Result>;
         get temp(): boolean;
         complete(): void;
-        put(next: Result | Error | Promise<Result | Error>): Result | Error | Promise<Result | Error>;
+        put(next: Result | Error | Promise<Result | Error>): Error | Result | Promise<Error | Result>;
         destructor(): void;
     }
 }
@@ -768,7 +779,6 @@ declare namespace $ {
 }
 
 declare namespace $ {
-    const $mol_key_store: WeakMap<object, string>;
     function $mol_key<Value>(value: Value): string;
 }
 
@@ -901,6 +911,11 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    function $mol_wait_user_async(this: $): Promise<unknown>;
+    function $mol_wait_user(this: $): unknown;
+}
+
+declare namespace $ {
     class $mol_storage extends $mol_object2 {
         static native(): StorageManager;
         static persisted(next?: boolean, cache?: 'cache'): boolean;
@@ -962,6 +977,10 @@ declare namespace $ {
 }
 
 declare namespace $ {
+    function $mol_charset_buffer(size: number): Uint8Array<ArrayBuffer>;
+}
+
+declare namespace $ {
     function $mol_charset_encode(str: string): Uint8Array<ArrayBuffer>;
     function $mol_charset_encode_to(str: string, buf: Uint8Array<ArrayBuffer>, from?: number): number;
     function $mol_charset_encode_size(str: string): number;
@@ -981,6 +1000,7 @@ declare namespace $ {
         }): number;
         read(): Uint8Array<ArrayBuffer>;
         truncate(size: number): void;
+        flush(): void;
         close(): void;
         destructor(): void;
     }
@@ -997,6 +1017,7 @@ declare namespace $ {
         }): number;
         truncate(size: number): void;
         read(): Uint8Array<ArrayBuffer>;
+        flush(): void;
         close(): void;
     }
 }
@@ -1126,7 +1147,7 @@ declare namespace $ {
 }
 
 declare namespace $ {
-    let $mol_gap: Record<"text" | "space" | "block" | "blur" | "round", $mol_style_func<"var", unknown>>;
+    let $mol_gap: Record<"text" | "space" | "block" | "emoji" | "blur" | "page" | "round", $mol_style_func<"var", unknown>>;
 }
 
 declare namespace $ {
@@ -1231,6 +1252,10 @@ declare namespace $ {
     function $mol_dom_render_events(el: Element, events: {
         [key: string]: (event: Event) => any;
     }, passive?: boolean): void;
+}
+
+declare namespace $ {
+    function $mol_error_message(this: $, error: unknown): string;
 }
 
 declare namespace $ {
@@ -1740,31 +1765,99 @@ declare namespace $.$$ {
 
 declare namespace $ {
 
-	type $mol_pop_bubble__align_mol_pop_1 = $mol_type_enforce<
-		ReturnType< $mol_pop['align'] >
-		,
-		ReturnType< $mol_pop_bubble['align'] >
-	>
-	type $mol_pop_bubble__content_mol_pop_2 = $mol_type_enforce<
+	export class $mol_ghost extends $mol_view {
+		Sub( ): $mol_view
+	}
+	
+}
+
+//# sourceMappingURL=ghost.view.tree.d.ts.map
+declare namespace $.$$ {
+    class $mol_ghost extends $.$mol_ghost {
+        dom_node_external(next?: Element): Element;
+        dom_node_actual(): Element;
+        dom_tree(): Element;
+        title(): string;
+        minimal_width(): number;
+        minimal_height(): number;
+    }
+}
+
+declare namespace $ {
+
+	export class $mol_follower extends $mol_ghost {
+		transform( ): string
+		Anchor( ): $mol_view
+		align( ): readonly(number)[]
+		offset( ): readonly(number)[]
+		style( ): ({ 
+			'transform': ReturnType< $mol_follower['transform'] >,
+		})  & ReturnType< $mol_ghost['style'] >
+	}
+	
+}
+
+//# sourceMappingURL=follower.view.tree.d.ts.map
+declare namespace $.$$ {
+    class $mol_follower extends $.$mol_follower {
+        pos(): {
+            left: number;
+            top: number;
+        } | null;
+        transform(): string;
+    }
+}
+
+declare namespace $ {
+}
+
+declare namespace $ {
+
+	type $mol_pop_bubble__content_mol_pop_1 = $mol_type_enforce<
 		ReturnType< $mol_pop['bubble_content'] >
 		,
 		ReturnType< $mol_pop_bubble['content'] >
 	>
-	type $mol_pop_bubble__height_max_mol_pop_3 = $mol_type_enforce<
+	type $mol_pop_bubble__height_max_mol_pop_2 = $mol_type_enforce<
 		ReturnType< $mol_pop['height_max'] >
 		,
 		ReturnType< $mol_pop_bubble['height_max'] >
 	>
+	type $mol_follower__offset_mol_pop_3 = $mol_type_enforce<
+		ReturnType< $mol_pop['bubble_offset'] >
+		,
+		ReturnType< $mol_follower['offset'] >
+	>
+	type $mol_follower__align_mol_pop_4 = $mol_type_enforce<
+		ReturnType< $mol_pop['bubble_align'] >
+		,
+		ReturnType< $mol_follower['align'] >
+	>
+	type $mol_follower__Anchor_mol_pop_5 = $mol_type_enforce<
+		ReturnType< $mol_pop['Anchor'] >
+		,
+		ReturnType< $mol_follower['Anchor'] >
+	>
+	type $mol_follower__Sub_mol_pop_6 = $mol_type_enforce<
+		ReturnType< $mol_pop['Bubble'] >
+		,
+		ReturnType< $mol_follower['Sub'] >
+	>
 	export class $mol_pop extends $mol_view {
+		bubble( ): any
 		Anchor( ): any
-		align( ): string
+		bubble_offset( ): readonly(number)[]
+		bubble_align( ): readonly(number)[]
 		bubble_content( ): readonly($mol_view_content)[]
 		height_max( ): number
 		Bubble( ): $mol_pop_bubble
+		Follower( ): $mol_follower
 		showed( next?: boolean ): boolean
 		align_vert( ): string
 		align_hor( ): string
+		align( ): string
 		prefer( ): string
+		auto( ): readonly(any)[]
 		sub( ): readonly(any)[]
 		sub_visible( ): readonly(any)[]
 	}
@@ -1772,14 +1865,13 @@ declare namespace $ {
 	export class $mol_pop_bubble extends $mol_view {
 		content( ): readonly($mol_view_content)[]
 		height_max( ): number
-		align( ): string
 		sub( ): ReturnType< $mol_pop_bubble['content'] >
 		style( ): ({ 
 			'maxHeight': ReturnType< $mol_pop_bubble['height_max'] >,
 		})  & ReturnType< $mol_view['style'] >
 		attr( ): ({ 
-			'mol_pop_align': ReturnType< $mol_pop_bubble['align'] >,
 			'tabindex': number,
+			'popover': string,
 		})  & ReturnType< $mol_view['attr'] >
 	}
 	
@@ -1794,20 +1886,9 @@ declare namespace $.$$ {
         align(): string;
         align_vert(): "suspense" | "top" | "bottom";
         align_hor(): "suspense" | "left" | "right";
-        View_port(): $mol_view;
-        view_port(): {
-            width: number;
-            height: number;
-            left: number;
-            right: number;
-            top: number;
-            bottom: number;
-        } | {
-            left: number;
-            top: number;
-            width: number;
-            height: number;
-        };
+        bubble_offset(): number[];
+        bubble_align(): number[];
+        bubble(): void;
     }
 }
 
@@ -2056,6 +2137,7 @@ declare namespace $ {
 		enabled( ): boolean
 		click( next?: any ): any
 		event_click( next?: any ): any
+		status( next?: readonly(any)[] ): readonly(any)[]
 		event( ): ({ 
 			click( next?: ReturnType< $mol_button['activate'] > ): ReturnType< $mol_button['activate'] >,
 			dblclick( next?: ReturnType< $mol_button['clicks'] > ): ReturnType< $mol_button['clicks'] >,
@@ -2076,7 +2158,6 @@ declare namespace $ {
 //# sourceMappingURL=button.view.tree.d.ts.map
 declare namespace $.$$ {
     class $mol_button extends $.$mol_button {
-        status(next?: any[]): any[];
         disabled(): boolean;
         event_activate(next: Event): void;
         event_key_press(event: KeyboardEvent): any;
@@ -2264,9 +2345,16 @@ declare namespace $ {
         }> | null;
         generate(params: Groups_to_params<Groups>): string | null;
         get native(): RegExp;
+        static separated<Chunk extends $mol_regexp_source, Sep extends $mol_regexp_source>(chunk: Chunk, sep: Sep): $mol_regexp<[$mol_regexp<[[Chunk], Sep] extends infer T ? T extends [[Chunk], Sep] ? T extends $mol_regexp_source[] ? $mol_type_merge<$mol_type_intersect<{ [key in Extract<keyof T, number>]: $mol_regexp_groups<T[key]>; }[Extract<keyof T, number>]>> : T extends RegExp ? Record<string, string> extends NonNullable<NonNullable<ReturnType<T["exec"]>>["groups"]> ? {} : NonNullable<NonNullable<ReturnType<T["exec"]>>["groups"]> : T extends {
+            readonly [x: string]: $mol_regexp_source;
+        } ? $mol_type_merge<$mol_type_intersect<{ [key_1 in keyof T]: $mol_type_merge<Omit<{ readonly [k in Extract<keyof T, string>]: string; }, key_1> & { readonly [k_1 in key_1]: T[key_1] extends string ? T[key_1] : string; } & $mol_regexp_groups<T[key_1]>>; }[keyof T]>> : never : never : never>, Chunk] extends infer T_1 ? T_1 extends [$mol_regexp<[[Chunk], Sep] extends infer T_2 ? T_2 extends [[Chunk], Sep] ? T_2 extends $mol_regexp_source[] ? $mol_type_merge<$mol_type_intersect<{ [key_4 in Extract<keyof T_2, number>]: $mol_regexp_groups<T_2[key_4]>; }[Extract<keyof T_2, number>]>> : T_2 extends RegExp ? Record<string, string> extends NonNullable<NonNullable<ReturnType<T_2["exec"]>>["groups"]> ? {} : NonNullable<NonNullable<ReturnType<T_2["exec"]>>["groups"]> : T_2 extends {
+            readonly [x: string]: $mol_regexp_source;
+        } ? $mol_type_merge<$mol_type_intersect<{ [key_5 in keyof T_2]: $mol_type_merge<Omit<{ readonly [k in Extract<keyof T_2, string>]: string; }, key_5> & { readonly [k_1 in key_5]: T_2[key_5] extends string ? T_2[key_5] : string; } & $mol_regexp_groups<T_2[key_5]>>; }[keyof T_2]>> : never : never : never>, Chunk] ? T_1 extends $mol_regexp_source[] ? $mol_type_merge<$mol_type_intersect<{ [key_2 in Extract<keyof T_1, number>]: $mol_regexp_groups<T_1[key_2]>; }[Extract<keyof T_1, number>]>> : T_1 extends RegExp ? Record<string, string> extends NonNullable<NonNullable<ReturnType<T_1["exec"]>>["groups"]> ? {} : NonNullable<NonNullable<ReturnType<T_1["exec"]>>["groups"]> : T_1 extends {
+            readonly [x: string]: $mol_regexp_source;
+        } ? $mol_type_merge<$mol_type_intersect<{ [key_3 in keyof T_1]: $mol_type_merge<Omit<{ readonly [k in Extract<keyof T_1, string>]: string; }, key_3> & { readonly [k_1 in key_3]: T_1[key_3] extends string ? T_1[key_3] : string; } & $mol_regexp_groups<T_1[key_3]>>; }[keyof T_1]>> : never : never : never>;
         static repeat<Source extends $mol_regexp_source>(source: Source, min?: number, max?: number): $mol_regexp<$mol_regexp_groups<Source>>;
         static repeat_greedy<Source extends $mol_regexp_source>(source: Source, min?: number, max?: number): $mol_regexp<$mol_regexp_groups<Source>>;
-        static vary<Sources extends readonly $mol_regexp_source[]>(sources: Sources): $mol_regexp<$mol_regexp_groups<Sources[number]>>;
+        static vary<Sources extends readonly $mol_regexp_source[]>(sources: Sources, flags?: string): $mol_regexp<$mol_regexp_groups<Sources[number]>>;
         static optional<Source extends $mol_regexp_source>(source: Source): $mol_regexp<$mol_regexp_groups<Source>>;
         static force_after(source: $mol_regexp_source): $mol_regexp<Record<string, string>>;
         static forbid_after(source: $mol_regexp_source): $mol_regexp<Record<string, string>>;
@@ -2497,6 +2585,15 @@ declare namespace $.$$ {
 }
 
 declare namespace $ {
+}
+
+declare namespace $ {
+    class $mol_dom_event<EventType extends Event> extends $mol_object {
+        readonly native: EventType;
+        constructor(native: EventType);
+        prevented(next?: boolean): boolean;
+        static wrap<EventType extends Event>(event: EventType): $mol_dom_event<EventType>;
+    }
 }
 
 declare namespace $ {
@@ -3049,7 +3146,7 @@ declare namespace $.$$ {
         sub_visible(): readonly $mol_view_content[];
         message_receive(event?: MessageEvent<[string, string]>): void;
         uri_change(event: MessageEvent<[string, string]>): void;
-        auto(): ($mol_dom_listener | Window)[];
+        auto(): (Window | $mol_dom_listener)[];
     }
 }
 
@@ -4682,6 +4779,14 @@ declare namespace $ {
         'Network Read Timeout Error' = 598,
         'Network Connect Timeout Error' = 599
     }
+}
+
+declare namespace $ {
+    function $mol_error_fence<Data>(task: () => Data, fallback: (parent: Error) => Error | Data | PromiseLike<Data>, loading?: (parent: PromiseLike<Data>) => Error | Data | PromiseLike<Data>): Data;
+}
+
+declare namespace $ {
+    function $mol_error_enriched<V>(cause: {}, cb: () => V): V;
 }
 
 declare namespace $ {
@@ -7348,15 +7453,15 @@ declare namespace $ {
 
 declare namespace $ {
 
-	type $mol_paragraph__dom_name_mol_section_1 = $mol_type_enforce<
+	type $mol_view__dom_name_mol_section_1 = $mol_type_enforce<
 		ReturnType< $mol_section['title_dom_name'] >
 		,
-		ReturnType< $mol_paragraph['dom_name'] >
+		ReturnType< $mol_view['dom_name'] >
 	>
-	type $mol_paragraph__title_mol_section_2 = $mol_type_enforce<
-		ReturnType< $mol_section['title'] >
+	type $mol_view__sub_mol_section_2 = $mol_type_enforce<
+		readonly(any)[]
 		,
-		ReturnType< $mol_paragraph['title'] >
+		ReturnType< $mol_view['sub'] >
 	>
 	type $mol_view__sub_mol_section_3 = $mol_type_enforce<
 		ReturnType< $mol_section['tools'] >
@@ -7375,7 +7480,7 @@ declare namespace $ {
 	>
 	export class $mol_section extends $mol_list {
 		title_dom_name( ): string
-		Title( ): $mol_paragraph
+		Title( ): $mol_view
 		tools( ): readonly(any)[]
 		Tools( ): $mol_view
 		head( ): readonly(any)[]
@@ -8073,6 +8178,7 @@ declare namespace $ {
 		bubble_content( ): readonly(any)[]
 		Filter( ): $mol_search
 		Trigger_icon( ): $mol_icon_dots_vertical
+		trigger_enabled( ): ReturnType< $mol_select['enabled'] >
 	}
 	
 }
@@ -8268,10 +8374,6 @@ declare namespace $ {
 
 //# sourceMappingURL=demo.view.tree.d.ts.map
 declare namespace $ {
-    function $mol_array_chunks<Item>(array: readonly Item[], rule: number | ((item: Item, index: number) => boolean)): Item[][];
-}
-
-declare namespace $ {
 
 	export class $mol_icon_plus extends $mol_icon {
 		path( ): string
@@ -8316,54 +8418,6 @@ declare namespace $ {
 }
 
 //# sourceMappingURL=flash.view.tree.d.ts.map
-declare namespace $ {
-
-	export class $mol_ghost extends $mol_view {
-		Sub( ): $mol_view
-	}
-	
-}
-
-//# sourceMappingURL=ghost.view.tree.d.ts.map
-declare namespace $.$$ {
-    class $mol_ghost extends $.$mol_ghost {
-        dom_node_external(next?: Element): Element;
-        dom_node_actual(): Element;
-        dom_tree(): Element;
-        title(): string;
-        minimal_width(): number;
-        minimal_height(): number;
-    }
-}
-
-declare namespace $ {
-
-	export class $mol_follower extends $mol_ghost {
-		transform( ): string
-		Anchor( ): $mol_view
-		align( ): readonly(number)[]
-		offset( ): readonly(number)[]
-		style( ): ({ 
-			'transform': ReturnType< $mol_follower['transform'] >,
-		})  & ReturnType< $mol_ghost['style'] >
-	}
-	
-}
-
-//# sourceMappingURL=follower.view.tree.d.ts.map
-declare namespace $.$$ {
-    class $mol_follower extends $.$mol_follower {
-        pos(): {
-            left: number;
-            top: number;
-        } | null;
-        transform(): string;
-    }
-}
-
-declare namespace $ {
-}
-
 declare namespace $ {
 
 	type $mol_text_code__text_mol_dump_value_1 = $mol_type_enforce<
@@ -9048,17 +9102,6 @@ declare namespace $ {
 
 //# sourceMappingURL=demo.view.tree.d.ts.map
 declare namespace $ {
-}
-
-declare namespace $ {
-
-	export class $mol_row extends $mol_view {
-	}
-	
-}
-
-//# sourceMappingURL=row.view.tree.d.ts.map
-declare namespace $ {
 
 	export class $mol_icon_upload extends $mol_icon {
 		path( ): string
@@ -9070,7 +9113,7 @@ declare namespace $ {
 declare namespace $ {
 
 	type $mol_button_open_native__files_mol_button_open_1 = $mol_type_enforce<
-		ReturnType< $mol_button_open['files'] >
+		ReturnType< $mol_button_open['files_handled'] >
 		,
 		ReturnType< $mol_button_open_native['files'] >
 	>
@@ -9086,7 +9129,8 @@ declare namespace $ {
 	>
 	export class $mol_button_open extends $mol_button_minor {
 		Icon( ): $mol_icon_upload
-		files( next?: readonly(any)[] ): readonly(any)[]
+		files( next?: readonly(File)[] ): readonly(File)[]
+		files_handled( next?: ReturnType< $mol_button_open['files'] > ): ReturnType< $mol_button_open['files'] >
 		accept( ): string
 		multiple( ): boolean
 		Native( ): $mol_button_open_native
@@ -9098,7 +9142,7 @@ declare namespace $ {
 		multiple( ): boolean
 		picked( next?: any ): any
 		dom_name( ): string
-		files( next?: readonly(any)[] ): readonly(any)[]
+		files( next?: readonly(File)[] ): readonly(File)[]
 		attr( ): ({ 
 			'type': string,
 			'accept': ReturnType< $mol_button_open_native['accept'] >,
@@ -9113,6 +9157,9 @@ declare namespace $ {
 
 //# sourceMappingURL=open.view.tree.d.ts.map
 declare namespace $.$$ {
+    class $mol_button_open extends $.$mol_button_open {
+        files_handled(next?: readonly File[]): readonly File[];
+    }
     class $mol_button_open_native extends $.$mol_button_open_native {
         dom_node(): HTMLInputElement;
         picked(): void;
@@ -9124,53 +9171,47 @@ declare namespace $ {
 
 declare namespace $ {
 
-	type $mol_row__sub_mol_attach_1 = $mol_type_enforce<
-		ReturnType< $mol_attach['content'] >
-		,
-		ReturnType< $mol_row['sub'] >
-	>
-	type $mol_image__title_mol_attach_2 = $mol_type_enforce<
+	type $mol_image__title_mol_attach_1 = $mol_type_enforce<
 		string
 		,
 		ReturnType< $mol_image['title'] >
 	>
-	type $mol_image__uri_mol_attach_3 = $mol_type_enforce<
+	type $mol_image__uri_mol_attach_2 = $mol_type_enforce<
 		ReturnType< $mol_attach['item_uri'] >
 		,
 		ReturnType< $mol_image['uri'] >
 	>
-	type $mol_button_open__title_mol_attach_4 = $mol_type_enforce<
-		ReturnType< $mol_attach['attach_title'] >
-		,
-		ReturnType< $mol_button_open['title'] >
-	>
-	type $mol_button_open__files_mol_attach_5 = $mol_type_enforce<
-		ReturnType< $mol_attach['attach_new'] >
-		,
-		ReturnType< $mol_button_open['files'] >
-	>
-	type $mol_button_minor__click_mol_attach_6 = $mol_type_enforce<
+	type $mol_button_minor__click_mol_attach_3 = $mol_type_enforce<
 		ReturnType< $mol_attach['item_drop'] >
 		,
 		ReturnType< $mol_button_minor['click'] >
 	>
-	type $mol_button_minor__sub_mol_attach_7 = $mol_type_enforce<
+	type $mol_button_minor__sub_mol_attach_4 = $mol_type_enforce<
 		readonly(any)[]
 		,
 		ReturnType< $mol_button_minor['sub'] >
 	>
+	type $mol_button_open__title_mol_attach_5 = $mol_type_enforce<
+		ReturnType< $mol_attach['attach_title'] >
+		,
+		ReturnType< $mol_button_open['title'] >
+	>
+	type $mol_button_open__files_mol_attach_6 = $mol_type_enforce<
+		ReturnType< $mol_attach['attach_new'] >
+		,
+		ReturnType< $mol_button_open['files'] >
+	>
 	export class $mol_attach extends $mol_view {
-		content( ): readonly($mol_view)[]
-		Content( ): $mol_row
-		attach_title( ): string
-		attach_new( next?: any ): any
 		item_drop( id: any, next?: any ): any
 		item_uri( id: any): string
 		Image( id: any): $mol_image
-		items( next?: readonly(string)[] ): readonly(string)[]
-		sub( ): readonly(any)[]
-		Add( ): $mol_button_open
 		Item( id: any): $mol_button_minor
+		attach_title( ): string
+		attach_new( next?: any ): any
+		Add( ): $mol_button_open
+		content( ): readonly($mol_view)[]
+		items( next?: readonly(string)[] ): readonly(string)[]
+		sub( ): ReturnType< $mol_attach['content'] >
 	}
 	
 }
@@ -9179,7 +9220,7 @@ declare namespace $ {
 declare namespace $.$$ {
     class $mol_attach extends $.$mol_attach {
         attach_new(files: File[]): void;
-        content(): ($mol_button_minor | $mol_button_open)[];
+        content(): ($mol_button_minor | $.$mol_button_open)[];
         item_uri(index: number): string;
         item_drop(index: number, event?: Event): void;
     }
@@ -9486,12 +9527,23 @@ declare namespace $.$$ {
     class $mol_audio_status extends $.$mol_audio_status {
         status(next?: $mol_audio_room_status): $mol_audio_room_status;
         wakeup(): void;
-        Icon(): $mol_icon_play | $mol_icon_power_sleep | $mol_icon_alert | $mol_icon_pause | $mol_icon_sleep;
+        Icon(): $mol_icon_play | $mol_icon_alert | $mol_icon_power_sleep | $mol_icon_pause | $mol_icon_sleep;
         wakeup_enabled(): boolean;
         status_name(): string;
     }
 }
 
+declare namespace $ {
+}
+
+declare namespace $ {
+
+	export class $mol_row extends $mol_view {
+	}
+	
+}
+
+//# sourceMappingURL=row.view.tree.d.ts.map
 declare namespace $ {
 
 	type __mol_audio_demo_1 = $mol_type_enforce<
@@ -12065,7 +12117,7 @@ declare namespace $ {
 }
 
 declare namespace $ {
-    type $mol_time_duration_config = number | string | {
+    type $mol_time_duration_config = number | string | readonly [number, number, number, number, number, number] | {
         year?: number;
         month?: number;
         day?: number;
@@ -12088,6 +12140,7 @@ declare namespace $ {
         valueOf(): number;
         toJSON(): string;
         toString(pattern?: string): string;
+        toArray(): readonly [number, number, number, number, number, number];
         [Symbol.toPrimitive](mode: 'default' | 'number' | 'string'): string | number;
         static patterns: {
             '#Y': (duration: $mol_time_duration) => string;
@@ -12120,7 +12173,7 @@ declare namespace $ {
         saturday = 5,
         sunday = 6
     }
-    type $mol_time_moment_config = number | Date | string | {
+    type $mol_time_moment_config = number | Date | string | readonly (number | undefined)[] | {
         year?: number;
         month?: number;
         day?: number;
@@ -12150,6 +12203,7 @@ declare namespace $ {
         valueOf(): number;
         toJSON(): string;
         toString(pattern?: string): string;
+        toArray(): readonly [number | undefined, number | undefined, number | undefined, number | undefined, number | undefined, number | undefined, number | undefined];
         [Symbol.toPrimitive](mode: 'default' | 'number' | 'string'): string | number;
         [$mol_dev_format_head](): any[];
         static patterns: {
@@ -14758,7 +14812,67 @@ declare namespace $ {
 
 //# sourceMappingURL=demo.view.tree.d.ts.map
 declare namespace $ {
+    function $mol_csv_syntax_make(delimiter: string): {
+        cell: $mol_regexp<{
+            readonly quote: string;
+            readonly inline: string;
+        }>;
+        row: $mol_regexp<{
+            [x: string]: string;
+            readonly row: string;
+            readonly quote: string;
+            readonly inline: string;
+            readonly line_end: string;
+            readonly end: string;
+            readonly win_end: string;
+            readonly mac_end: string;
+        }>;
+        table: $mol_regexp<{
+            [key: string]: string;
+        } & {
+            [x: string]: string;
+            readonly row: string;
+            readonly quote: string;
+            readonly inline: string;
+            readonly line_end: string;
+            readonly end: string;
+            readonly win_end: string;
+            readonly mac_end: string;
+        }>;
+    };
+    function $mol_csv_syntax(delimiter: string): {
+        cell: $mol_regexp<{
+            readonly quote: string;
+            readonly inline: string;
+        }>;
+        row: $mol_regexp<{
+            [x: string]: string;
+            readonly row: string;
+            readonly quote: string;
+            readonly inline: string;
+            readonly line_end: string;
+            readonly end: string;
+            readonly win_end: string;
+            readonly mac_end: string;
+        }>;
+        table: $mol_regexp<{
+            [key: string]: string;
+        } & {
+            [x: string]: string;
+            readonly row: string;
+            readonly quote: string;
+            readonly inline: string;
+            readonly line_end: string;
+            readonly end: string;
+            readonly win_end: string;
+            readonly mac_end: string;
+        }>;
+    };
+}
+
+declare namespace $ {
     function $mol_csv_parse(text: string, delimiter?: string): Record<string, any>[];
+    function $mol_csv_parse_table(text: string, delimiter?: string): string[][];
 }
 
 declare namespace $ {
@@ -14774,6 +14888,7 @@ declare namespace $ {
 //# sourceMappingURL=demo.view.tree.d.ts.map
 declare namespace $ {
     function $mol_csv_serial(data: Record<string, any>[], delimiter?: string): string;
+    function $mol_csv_serial_table(rows: string[][], delimiter?: string): string;
 }
 
 declare namespace $ {
@@ -15948,67 +16063,97 @@ declare namespace $ {
 
 declare namespace $ {
 
-	export class $mol_chip extends $mol_view {
-		hint( ): string
-		minimal_height( ): number
-		attr( ): ({ 
-			'title': ReturnType< $mol_chip['hint'] >,
-		})  & ReturnType< $mol_view['attr'] >
-		sub( ): readonly(any)[]
-	}
-	
-}
-
-//# sourceMappingURL=chip.view.tree.d.ts.map
-declare namespace $.$$ {
-}
-
-declare namespace $ {
-
-	type $mol_chip__title_mol_emoji_safe_demo_1 = $mol_type_enforce<
+	type $mol_search__query_mol_emoji_safe_demo_1 = $mol_type_enforce<
+		ReturnType< $mol_emoji_safe_demo['filter'] >
+		,
+		ReturnType< $mol_search['query'] >
+	>
+	type $mol_row__sub_mol_emoji_safe_demo_2 = $mol_type_enforce<
+		readonly(any)[]
+		,
+		ReturnType< $mol_row['sub'] >
+	>
+	type $mol_button_copy__title_mol_emoji_safe_demo_3 = $mol_type_enforce<
+		ReturnType< $mol_emoji_safe_demo['group_title'] >
+		,
+		ReturnType< $mol_button_copy['title'] >
+	>
+	type $mol_button_copy__text_mol_emoji_safe_demo_4 = $mol_type_enforce<
+		ReturnType< $mol_emoji_safe_demo['group_emoji_text'] >
+		,
+		ReturnType< $mol_button_copy['text'] >
+	>
+	type $mol_button_copy__hint_mol_emoji_safe_demo_5 = $mol_type_enforce<
+		string
+		,
+		ReturnType< $mol_button_copy['hint'] >
+	>
+	type $mol_button_copy__Icon_mol_emoji_safe_demo_6 = $mol_type_enforce<
+		any
+		,
+		ReturnType< $mol_button_copy['Icon'] >
+	>
+	type $mol_button_copy__hint_mol_emoji_safe_demo_7 = $mol_type_enforce<
+		ReturnType< $mol_emoji_safe_demo['emoji_hint'] >
+		,
+		ReturnType< $mol_button_copy['hint'] >
+	>
+	type $mol_button_copy__title_mol_emoji_safe_demo_8 = $mol_type_enforce<
 		ReturnType< $mol_emoji_safe_demo['emoji'] >
 		,
-		ReturnType< $mol_chip['title'] >
+		ReturnType< $mol_button_copy['title'] >
 	>
-	type $mol_view__sub_mol_emoji_safe_demo_2 = $mol_type_enforce<
+	type $mol_button_copy__Icon_mol_emoji_safe_demo_9 = $mol_type_enforce<
+		any
+		,
+		ReturnType< $mol_button_copy['Icon'] >
+	>
+	type $mol_view__sub_mol_emoji_safe_demo_10 = $mol_type_enforce<
 		ReturnType< $mol_emoji_safe_demo['emojis'] >
 		,
 		ReturnType< $mol_view['sub'] >
 	>
-	type $mol_section__title_mol_emoji_safe_demo_3 = $mol_type_enforce<
-		ReturnType< $mol_emoji_safe_demo['group_title'] >
+	type $mol_section__Title_mol_emoji_safe_demo_11 = $mol_type_enforce<
+		ReturnType< $mol_emoji_safe_demo['Group_title'] >
 		,
-		ReturnType< $mol_section['title'] >
+		ReturnType< $mol_section['Title'] >
 	>
-	type $mol_section__level_mol_emoji_safe_demo_4 = $mol_type_enforce<
-		number
-		,
-		ReturnType< $mol_section['level'] >
-	>
-	type $mol_section__content_mol_emoji_safe_demo_5 = $mol_type_enforce<
+	type $mol_section__content_mol_emoji_safe_demo_12 = $mol_type_enforce<
 		readonly(any)[]
 		,
 		ReturnType< $mol_section['content'] >
 	>
-	type $mol_list__rows_mol_emoji_safe_demo_6 = $mol_type_enforce<
+	type $mol_list__rows_mol_emoji_safe_demo_13 = $mol_type_enforce<
 		ReturnType< $mol_emoji_safe_demo['groups'] >
 		,
 		ReturnType< $mol_list['rows'] >
 	>
-	type $mol_scroll__sub_mol_emoji_safe_demo_7 = $mol_type_enforce<
+	type $mol_list__rows_mol_emoji_safe_demo_14 = $mol_type_enforce<
+		readonly(any)[]
+		,
+		ReturnType< $mol_list['rows'] >
+	>
+	type $mol_scroll__sub_mol_emoji_safe_demo_15 = $mol_type_enforce<
 		readonly(any)[]
 		,
 		ReturnType< $mol_scroll['sub'] >
 	>
 	export class $mol_emoji_safe_demo extends $mol_example_large {
+		filter( next?: string ): string
+		Filter( ): $mol_search
+		Tools( ): $mol_row
 		group_title( id: any): string
+		group_emoji_text( id: any): string
+		Group_title( id: any): $mol_button_copy
+		emoji_hint( id: any): string
 		emoji( id: any): string
-		Emoji( id: any): $mol_chip
+		Emoji( id: any): $mol_button_copy
 		emojis( id: any): readonly(any)[]
 		Emojis( id: any): $mol_view
 		Group( id: any): $mol_section
 		groups( ): readonly(any)[]
 		Groups( ): $mol_list
+		Content( ): $mol_list
 		Scroll( ): $mol_scroll
 		title( ): string
 		sub( ): readonly(any)[]
@@ -16024,8 +16169,10 @@ declare namespace $.$$ {
         data(): Record<string, Record<string, readonly string[]>>;
         groups(): $.$mol_section[];
         group_title(group: string): string;
-        emojis(group: string): $mol_chip[];
-        emoji(emoji: string): string;
+        emojis(group: string): $.$mol_button_copy[];
+        group_emoji_text(group: string): string;
+        emoji([group, emoji]: [string, string]): string;
+        emoji_hint([group, emoji]: [string, string]): string;
     }
 }
 
@@ -16522,6 +16669,13 @@ declare namespace $ {
 
 //# sourceMappingURL=restore.view.tree.d.ts.map
 declare namespace $ {
+    type Primitive = string | number | boolean;
+    export type $mol_form_draft_state_value = readonly Primitive[] | Primitive | Record<string, boolean>;
+    export type $mol_form_draft_state = Record<string, $mol_form_draft_state_value | null> | null;
+    export {};
+}
+
+declare namespace $ {
 
 	type $mol_button_minor__hint_mol_form_draft_1 = $mol_type_enforce<
 		ReturnType< $mol_form_draft['reset_title'] >
@@ -16545,7 +16699,7 @@ declare namespace $ {
 		model( ): $mol_object2
 		model_pick( id: any, next?: any ): any
 		changed( ): boolean
-		state( ): Record<string, any>
+		state( next?: $mol_form_draft_state | null ): $mol_form_draft_state | null
 		state_pick( id: any, next?: any ): any
 		value( id: any, next?: any ): any
 		value_str( id: any, next?: string ): string
@@ -16563,26 +16717,23 @@ declare namespace $ {
 
 //# sourceMappingURL=draft.view.tree.d.ts.map
 declare namespace $.$$ {
-    type Primitive = string | number | boolean;
-    type Value = readonly Primitive[] | Primitive | Record<string, boolean>;
-    export class $mol_form_draft extends $.$mol_form_draft {
+    class $mol_form_draft extends $.$mol_form_draft {
         list_string(field: string, next?: readonly string[] | null): string[];
         dictionary_bool(field: string, next?: Record<string, boolean> | null): Record<string, boolean>;
         value_str(field: string, next?: string | null): string;
         value_number(field: string, next?: number | null): number;
         value_bool(field: string, next?: boolean | null): boolean;
-        model_pick(field: string, next?: Value | null): Value;
-        state_pick(field: string, next?: Value | null): Value | null;
-        value<T extends Value>(field: string, next?: T | null): T;
+        model_pick(field: string, next?: $mol_form_draft_state_value | null): $mol_form_draft_state_value;
+        state_pick(field: string, next?: $mol_form_draft_state_value | null): $mol_form_draft_state_value | null;
+        value<T extends $mol_form_draft_state_value>(field: string, next?: T | null): T;
         value_changed(field: string): boolean;
-        state(next?: Record<string, Value | null> | null): Record<string, Value | null>;
+        state(next?: $mol_form_draft_state): Record<string, $mol_form_draft_state_value | null>;
         changed(): boolean;
         reset(next?: unknown): void;
         result(next?: string | Error): string;
         buttons(): ($mol_button_minor | $.$mol_status)[];
         save(next?: Event): null;
     }
-    export {};
 }
 
 declare namespace $.$$ {
@@ -18719,8 +18870,8 @@ declare namespace $ {
         readonly table: string;
         readonly header: string;
         readonly list: string;
-        readonly quote: string;
         readonly cut: string;
+        readonly quote: string;
         readonly paragraph: string;
         readonly script: string;
         readonly win_end: string;
@@ -20213,6 +20364,11 @@ declare namespace $ {
 		,
 		ReturnType< $mol_view['sub'] >
 	>
+	type $mol_view__sub_mol_pop_demo_18 = $mol_type_enforce<
+		readonly(any)[]
+		,
+		ReturnType< $mol_view['sub'] >
+	>
 	export class $mol_pop_demo extends $mol_example {
 		show_title( ): string
 		pop_showed_check_hint( ): string
@@ -20245,6 +20401,7 @@ declare namespace $ {
 		bubble_hint( ): string
 		Content( ): $mol_row
 		Pop( ): $mol_pop
+		Other( ): $mol_view
 		Pop_area( ): $mol_view
 		title( ): string
 		sub( ): readonly(any)[]
@@ -20293,78 +20450,88 @@ declare namespace $ {
 
 declare namespace $ {
 
-	type $mol_button_minor__title_mol_pop_over_demo_1 = $mol_type_enforce<
+	type $mol_view__sub_mol_pop_over_demo_1 = $mol_type_enforce<
+		readonly(any)[]
+		,
+		ReturnType< $mol_view['sub'] >
+	>
+	type $mol_button_minor__title_mol_pop_over_demo_2 = $mol_type_enforce<
 		ReturnType< $mol_pop_over_demo['open_title'] >
 		,
 		ReturnType< $mol_button_minor['title'] >
 	>
-	type $mol_button_minor__title_mol_pop_over_demo_2 = $mol_type_enforce<
+	type $mol_button_minor__title_mol_pop_over_demo_3 = $mol_type_enforce<
 		ReturnType< $mol_pop_over_demo['export_title'] >
 		,
 		ReturnType< $mol_button_minor['title'] >
 	>
-	type $mol_button_minor__title_mol_pop_over_demo_3 = $mol_type_enforce<
+	type $mol_button_minor__title_mol_pop_over_demo_4 = $mol_type_enforce<
 		ReturnType< $mol_pop_over_demo['save_title'] >
 		,
 		ReturnType< $mol_button_minor['title'] >
 	>
-	type $mol_list__rows_mol_pop_over_demo_4 = $mol_type_enforce<
+	type $mol_list__rows_mol_pop_over_demo_5 = $mol_type_enforce<
 		readonly(any)[]
 		,
 		ReturnType< $mol_list['rows'] >
 	>
-	type $mol_pop_over__align_mol_pop_over_demo_5 = $mol_type_enforce<
+	type $mol_pop_over__align_mol_pop_over_demo_6 = $mol_type_enforce<
 		string
 		,
 		ReturnType< $mol_pop_over['align'] >
 	>
-	type $mol_pop_over__Anchor_mol_pop_over_demo_6 = $mol_type_enforce<
-		ReturnType< $mol_pop_over_demo['file_title'] >
+	type $mol_pop_over__Anchor_mol_pop_over_demo_7 = $mol_type_enforce<
+		ReturnType< $mol_pop_over_demo['File_anchor'] >
 		,
 		ReturnType< $mol_pop_over['Anchor'] >
 	>
-	type $mol_pop_over__bubble_content_mol_pop_over_demo_7 = $mol_type_enforce<
+	type $mol_pop_over__bubble_content_mol_pop_over_demo_8 = $mol_type_enforce<
 		readonly(any)[]
 		,
 		ReturnType< $mol_pop_over['bubble_content'] >
 	>
-	type $mol_button_minor__title_mol_pop_over_demo_8 = $mol_type_enforce<
+	type $mol_view__sub_mol_pop_over_demo_9 = $mol_type_enforce<
+		readonly(any)[]
+		,
+		ReturnType< $mol_view['sub'] >
+	>
+	type $mol_button_minor__title_mol_pop_over_demo_10 = $mol_type_enforce<
 		ReturnType< $mol_pop_over_demo['updates_title'] >
 		,
 		ReturnType< $mol_button_minor['title'] >
 	>
-	type $mol_button_minor__title_mol_pop_over_demo_9 = $mol_type_enforce<
+	type $mol_button_minor__title_mol_pop_over_demo_11 = $mol_type_enforce<
 		ReturnType< $mol_pop_over_demo['about_title'] >
 		,
 		ReturnType< $mol_button_minor['title'] >
 	>
-	type $mol_list__rows_mol_pop_over_demo_10 = $mol_type_enforce<
+	type $mol_list__rows_mol_pop_over_demo_12 = $mol_type_enforce<
 		readonly(any)[]
 		,
 		ReturnType< $mol_list['rows'] >
 	>
-	type $mol_pop_over__align_mol_pop_over_demo_11 = $mol_type_enforce<
+	type $mol_pop_over__align_mol_pop_over_demo_13 = $mol_type_enforce<
 		string
 		,
 		ReturnType< $mol_pop_over['align'] >
 	>
-	type $mol_pop_over__Anchor_mol_pop_over_demo_12 = $mol_type_enforce<
-		ReturnType< $mol_pop_over_demo['help_title'] >
+	type $mol_pop_over__Anchor_mol_pop_over_demo_14 = $mol_type_enforce<
+		ReturnType< $mol_pop_over_demo['Help_anchor'] >
 		,
 		ReturnType< $mol_pop_over['Anchor'] >
 	>
-	type $mol_pop_over__bubble_content_mol_pop_over_demo_13 = $mol_type_enforce<
+	type $mol_pop_over__bubble_content_mol_pop_over_demo_15 = $mol_type_enforce<
 		readonly(any)[]
 		,
 		ReturnType< $mol_pop_over['bubble_content'] >
 	>
-	type $mol_row__sub_mol_pop_over_demo_14 = $mol_type_enforce<
+	type $mol_row__sub_mol_pop_over_demo_16 = $mol_type_enforce<
 		readonly(any)[]
 		,
 		ReturnType< $mol_row['sub'] >
 	>
 	export class $mol_pop_over_demo extends $mol_example_small {
-		file_title( ): string
+		File_anchor( ): $mol_view
 		open_title( ): string
 		Open( ): $mol_button_minor
 		export_title( ): string
@@ -20373,7 +20540,7 @@ declare namespace $ {
 		Save( ): $mol_button_minor
 		File_menu( ): $mol_list
 		File( ): $mol_pop_over
-		help_title( ): string
+		Help_anchor( ): $mol_view
 		updates_title( ): string
 		Updates( ): $mol_button_minor
 		about_title( ): string
@@ -21649,35 +21816,46 @@ declare namespace $.$$ {
 }
 
 declare namespace $ {
-    class $mol_spell_morphs extends Set<string> {
-        readonly max: number;
-        constructor(items?: string[]);
-    }
     class $mol_spell extends Object {
-        static head: $mol_spell_morphs;
-        static prefix: $mol_spell_morphs;
-        static root: $mol_spell_morphs;
-        static postfix: $mol_spell_morphs;
-        static foot: $mol_spell_morphs;
-        static test(word: string): boolean;
-        static test_tail(word: string): boolean;
-        static test_body(word: string): boolean;
+        readonly head: Set<string>;
+        readonly prefix: Set<string>;
+        readonly root: Set<string>;
+        readonly postfix: Set<string>;
+        readonly foot: Set<string>;
+        constructor(head?: Set<string>, prefix?: Set<string>, root?: Set<string>, postfix?: Set<string>, foot?: Set<string>);
+        regexp_word(): $mol_regexp<{
+            [x: string]: string;
+            readonly head: string;
+            readonly prefix: string;
+            readonly root: string;
+            readonly postfix: string;
+            readonly foot: string;
+            readonly join: string;
+        }>;
+        regexp_token(): $mol_regexp<{
+            readonly head: string;
+            readonly prefix: string;
+            readonly root: string;
+            readonly postfix: string;
+            readonly foot: string;
+            readonly join: string;
+        }>;
+        regexp_head(): $mol_regexp<{}>;
+        regexp_prefix(): $mol_regexp<{}>;
+        regexp_root(): $mol_regexp<{}>;
+        regexp_postfix(): $mol_regexp<{}>;
+        regexp_foot(): $mol_regexp<{}>;
+        check(word: string): boolean;
+        split(word: string): string[];
     }
 }
 
 declare namespace $ {
-    class $mol_spell_ru extends $mol_spell {
-        static prefix: $mol_spell_morphs;
-        static root: $mol_spell_morphs;
-        static postfix: $mol_spell_morphs;
-        static foot: $mol_spell_morphs;
-    }
+    let $mol_spell_ru: $mol_spell;
 }
 
 declare namespace $ {
-    class $mol_spell_any extends Object {
-        static test(word: string): boolean;
-    }
+    let $mol_spell_any: $mol_spell;
 }
 
 declare namespace $ {
@@ -21687,12 +21865,47 @@ declare namespace $ {
 		,
 		ReturnType< $mol_textarea['value'] >
 	>
-	type $mol_text_code__text_mol_spell_demo_2 = $mol_type_enforce<
+	type $mol_labeler__title_mol_spell_demo_2 = $mol_type_enforce<
+		string
+		,
+		ReturnType< $mol_labeler['title'] >
+	>
+	type $mol_labeler__content_mol_spell_demo_3 = $mol_type_enforce<
+		readonly(any)[]
+		,
+		ReturnType< $mol_labeler['content'] >
+	>
+	type $mol_text_code__text_mol_spell_demo_4 = $mol_type_enforce<
+		ReturnType< $mol_spell_demo['segments'] >
+		,
+		ReturnType< $mol_text_code['text'] >
+	>
+	type $mol_labeler__title_mol_spell_demo_5 = $mol_type_enforce<
+		string
+		,
+		ReturnType< $mol_labeler['title'] >
+	>
+	type $mol_labeler__Content_mol_spell_demo_6 = $mol_type_enforce<
+		ReturnType< $mol_spell_demo['Segments'] >
+		,
+		ReturnType< $mol_labeler['Content'] >
+	>
+	type $mol_text_code__text_mol_spell_demo_7 = $mol_type_enforce<
 		ReturnType< $mol_spell_demo['report'] >
 		,
 		ReturnType< $mol_text_code['text'] >
 	>
-	type $mol_list__rows_mol_spell_demo_3 = $mol_type_enforce<
+	type $mol_labeler__title_mol_spell_demo_8 = $mol_type_enforce<
+		string
+		,
+		ReturnType< $mol_labeler['title'] >
+	>
+	type $mol_labeler__Content_mol_spell_demo_9 = $mol_type_enforce<
+		ReturnType< $mol_spell_demo['Report'] >
+		,
+		ReturnType< $mol_labeler['Content'] >
+	>
+	type $mol_list__rows_mol_spell_demo_10 = $mol_type_enforce<
 		readonly(any)[]
 		,
 		ReturnType< $mol_list['rows'] >
@@ -21700,8 +21913,13 @@ declare namespace $ {
 	export class $mol_spell_demo extends $mol_example_small {
 		article( next?: string ): string
 		Article( ): $mol_textarea
+		Article_block( ): $mol_labeler
+		segments( ): string
+		Segments( ): $mol_text_code
+		Segments_block( ): $mol_labeler
 		report( ): string
 		Report( ): $mol_text_code
+		Reports_block( ): $mol_labeler
 		List( ): $mol_list
 		sub( ): readonly(any)[]
 		tags( ): readonly(any)[]
@@ -21713,7 +21931,9 @@ declare namespace $ {
 //# sourceMappingURL=demo.view.tree.d.ts.map
 declare namespace $.$$ {
     class $mol_spell_demo extends $.$mol_spell_demo {
+        words(): string[];
         report(): string;
+        segments(): string;
     }
 }
 
@@ -22271,6 +22491,7 @@ declare namespace $ {
 declare namespace $.$$ {
     class $mol_textarea_demo extends $.$mol_textarea_demo {
         symbols_hint(): string;
+        filled_descr(next?: string): string;
     }
 }
 
