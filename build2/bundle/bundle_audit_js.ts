@@ -21,7 +21,7 @@ namespace $ {
 			for( const path of paths ) {
 
 				if( /\.d\.ts/.test( path ) ) continue
-				this.root().convert([ this.$.$mol_build2_convert_ts, $mol_file.absolute( path ) ])?.transpile_out()
+				this.root().convert([ this.$.$mol_build2_convert_ts, this.$.$mol_file2.absolute( path ) ])?.transpile_out()
 
 				const error = this.on_error( path )
 				if( !error ) continue
@@ -81,7 +81,7 @@ namespace $ {
 		@ $mol_action
 		checker_changes_apply( changes: $mol_build2_checker_changes ) {
 			for( const [ path, data ] of changes.writes ) {
-				this.$.$mol_file.relative( path ).text( data, 'virt' )
+				this.$.$mol_file2.relative( path ).text( data, 'virt' )
 			}
 			for( const [ path, error ] of changes.errors ) {
 				this.on_error( path, error )
@@ -118,7 +118,7 @@ namespace $ {
 		@ $mol_mem_key
 		on_error( path: string, next = null as null | string ) {
 			if( /\.d\.ts$/.test( path ) ) return next
-			this.root().convert([ this.$.$mol_build2_convert_ts, $mol_file.absolute( path ) ])?.transpile_out()
+			this.root().convert([ this.$.$mol_build2_convert_ts, this.$.$mol_file2.absolute( path ) ])?.transpile_out()
 			return next
 		}
 

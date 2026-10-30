@@ -1,11 +1,6 @@
 namespace $ {
 
-	/**
-	 * Файловая система для сборщика: ресет всего поддерева при изменениях
-	 * и вотчеры на появляющиеся папки — новые модули подхватываются без перезапуска.
-	 * Подключается штатной подменой: $.$mol_file = $mol_build2_file
-	 */
-	export class $mol_build2_file extends $mol_file_node {
+	export class $mol_file2 extends $mol_file_node {
 
 		protected static reset_subtree( file: $mol_file_base ) {
 			const sub = $mol_wire_probe( ()=> file.sub() ) ?? []
@@ -24,8 +19,6 @@ namespace $ {
 						const path = file.path()
 						return path === base || path.startsWith( base + '/' )
 					}
-
-					// списки sub у предков могли устареть (файл появился/исчез)
 					for( let parent = file.parent(); ; parent = parent.parent() ) {
 						if( $mol_wire_probe( ()=> parent.sub() ) ) parent.sub( null )
 						if( parent === parent.parent() ) break
@@ -53,7 +46,7 @@ namespace $ {
 		}
 
 		@ $mol_mem
-		override watcher( reset?: null ) {
+		override watcher() {
 
 			const watch_path = this.path()
 			if( !this.root() && !this.exists() ) return { destructor() {} }
@@ -80,7 +73,6 @@ namespace $ {
 
 				let event_path = name?.toString()
 				if( event_path ) {
-					// винда шлёт абсолютные пути с префиксом \\?\
 					event_path = event_path.replace( /^[\\\/]*\?[\\\/]/, '' )
 					if( !$node.path.isAbsolute( event_path ) ) event_path = $node.path.join( watch_path, event_path )
 					event_path = $node.path.resolve( event_path ).replace( /\\/g, '/' )
@@ -88,13 +80,11 @@ namespace $ {
 					event_path = watch_path
 				}
 
-				;( this.constructor as typeof $mol_build2_file ).changed_add( type, event_path )
-
-				// сама папка переименована/удалена — вотчер мёртв, пересоздаём
+				;( this.constructor as typeof $mol_file2 ).changed_add( type, event_path )
 				if( type === 'rename' && event_path === watch_path ) {
 					destructed = true
 					watcher.close()
-					setTimeout( ()=> $mol_wire_async( this ).watcher( null ), 500 )
+					setTimeout( ()=> $mol_wire_async( this ).watcher(), 500 )
 				}
 
 			} )
@@ -103,8 +93,8 @@ namespace $ {
 
 			watcher.on( 'close', ()=> {
 				if( !destructed ) {
-					;( this.constructor as typeof $mol_build2_file ).changed_add( 'rename', watch_path )
-					setTimeout( ()=> $mol_wire_async( this ).watcher( null ), 500 )
+					;( this.constructor as typeof $mol_file2 ).changed_add( 'rename', watch_path )
+					setTimeout( ()=> $mol_wire_async( this ).watcher(), 500 )
 				}
 			} )
 

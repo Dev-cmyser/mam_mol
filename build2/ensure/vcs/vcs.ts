@@ -50,7 +50,7 @@ namespace $ {
 			const vcs_type = this.vcs_type()
 			if( !vcs_type ) return null
 
-			const mod = this.$.$mol_file.absolute( path )
+			const mod = this.$.$mol_file2.absolute( path )
 			const root_dir = this.root().dir()
 			const root_url = this.root_repo()
 			if( mod === root_dir ) return !root_url ? null : { url: root_url, branch: null as null | string }
@@ -79,7 +79,7 @@ namespace $ {
 			if( this.update_disabled ) return false
 
 			try {
-				return this.$.$mol_file.unwatched( () => this.update( dir ), dir )
+				return this.$.$mol_file2.unwatched( () => this.update( dir ), dir )
 			} catch( error ) {
 				if( error instanceof $mol_run_error && error.cause.timeout_kill ) {
 					this.$.$mol_log3_warn({
@@ -103,7 +103,7 @@ namespace $ {
 		@ $mol_mem_key
 		ensure( path: string ) {
 
-			const mod = this.$.$mol_file.absolute( path )
+			const mod = this.$.$mol_file2.absolute( path )
 			const ensured_key = mod.path()
 
 			if( mod.exists() ) {
@@ -113,7 +113,7 @@ namespace $ {
 				if( !this.inited( path ) ) {
 					if( !this.repo( path ) ) return false
 
-					this.$.$mol_file.unwatched( () => this.init_existing( path ), path )
+					this.$.$mol_file2.unwatched( () => this.init_existing( path ), path )
 					$mol_build2_ensure_vcs.ensured.add( ensured_key )
 					return true
 				}
@@ -125,7 +125,7 @@ namespace $ {
 
 			if( this.repo( path ) ) {
 				if( $mol_build2_ensure_vcs.ensured.has( ensured_key ) ) return true
-				this.$.$mol_file.unwatched( () => this.init( path ), path )
+				this.$.$mol_file2.unwatched( () => this.init( path ), path )
 				$mol_build2_ensure_vcs.ensured.add( ensured_key )
 				return true
 			}

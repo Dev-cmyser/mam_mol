@@ -5,7 +5,7 @@ namespace $ {
 
 		@ $mol_mem
 		dir() {
-			return this.$.$mol_file.relative( '.' )
+			return this.$.$mol_file2.relative( '.' )
 		}
 
 		@ $mol_mem

@@ -1,7 +1,5 @@
 namespace $ {
 
-	$.$mol_file = $mol_build2_file
-
 	let $mol_build2_start_root = null as null | $mol_build2_root
 
 	export function $mol_build2_start() {

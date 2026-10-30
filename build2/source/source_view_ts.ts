@@ -12,7 +12,7 @@ namespace $ {
 			
 			const file = this.file()
 			
-			const tree = this.$.$mol_file.absolute( file.path().replace( /(?:\.css)?\.tsx?$/ , '\.tree' ) )
+			const tree = this.$.$mol_file2.absolute( file.path().replace( /(?:\.css)?\.tsx?$/ , '\.tree' ) )
 			deps.set( tree, 0 )
 
 			return deps

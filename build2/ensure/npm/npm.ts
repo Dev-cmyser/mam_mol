@@ -10,7 +10,7 @@ namespace $ {
 		@ $mol_mem_key
 		ensure( path: string ) {
 
-			const mod = this.$.$mol_file.absolute( path )
+			const mod = this.$.$mol_file2.absolute( path )
 			const parent = mod.parent()
 			const node = this.root().dir().resolve( 'node' )
 			const node_modules = this.root().dir().resolve( 'node_modules' )
