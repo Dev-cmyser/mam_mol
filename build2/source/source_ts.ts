@@ -5,7 +5,7 @@ namespace $ {
 	type ts_SourceFile = import('typescript').SourceFile
 
 	export type $mol_build2_source_ts_deps = {
-		mam_deps: Map< $mol_file, number >
+		deps: Map< $mol_file, number >
 		npm: $mol_build2_source_ts_npm
 	}
 
@@ -17,7 +17,7 @@ namespace $ {
 
 		@ $mol_mem
 		deps() {
-			const deps = this.ts_source_deps().mam_deps
+			const deps = this.ts_source_deps().deps
 
 			return deps
 		}
@@ -72,22 +72,22 @@ namespace $ {
 			const priority = this.priority_of( node, source, lines )
 
 			if( ts.isImportDeclaration( node ) && ts.isStringLiteral( node.moduleSpecifier ) ) {
-				this.path_add( ctx.mam_deps, node.moduleSpecifier.text, priority )
+				this.path_add( ctx.deps, node.moduleSpecifier.text, priority )
 			}
 
 			if( ts.isCallExpression( node ) && ts.isIdentifier( node.expression ) && node.expression.escapedText === 'require' ) {
 				const arg = node.arguments[ 0 ]
-				if( ts.isStringLiteral( arg ) ) this.path_add( ctx.mam_deps, arg.text, priority )
+				if( ts.isStringLiteral( arg ) ) this.path_add( ctx.deps, arg.text, priority )
 			}
 
 			if( ts.isCallExpression( node ) && node.expression.kind === ts.SyntaxKind.ImportKeyword ) {
 				const arg = node.arguments[ 0 ]
-				if( ts.isStringLiteral( arg ) ) this.path_add( ctx.mam_deps, arg.text, priority )
+				if( ts.isStringLiteral( arg ) ) this.path_add( ctx.deps, arg.text, priority )
 			}
 
 			if( ts.isImportTypeNode( node ) && ts.isLiteralTypeNode( node.argument ) ) {
 				const arg = node.argument.literal
-				if( ts.isStringLiteral( arg ) ) this.path_add( ctx.mam_deps, arg.text, priority )
+				if( ts.isStringLiteral( arg ) ) this.path_add( ctx.deps, arg.text, priority )
 			}
 
 			if( ts.isIdentifier( node ) ) {
@@ -96,10 +96,10 @@ namespace $ {
 
 				if( fqn === 'node' || fqn === 'npm' ) {
 					const name = ctx.npm.dep_note( node )
-					if( name ) this.npm_dep_add( ctx.mam_deps, name, priority )
+					if( name ) this.npm_dep_add( ctx.deps, name, priority )
 				}
 
-				if( fqn ) this.fqn_add( ctx.mam_deps, fqn, priority )
+				if( fqn ) this.fqn_add( ctx.deps, fqn, priority )
 
 				ctx.npm.ident_note( node )
 
@@ -112,13 +112,13 @@ namespace $ {
 		ts_source_deps(): $mol_build2_source_ts_deps {
 
 			const ctx: $mol_build2_source_ts_deps = {
-				mam_deps: new Map(),
+				deps: new Map(),
 				npm: new this.$.$mol_build2_source_ts_npm,
 			}
 
 			const source = this.ts_source()
 
-			this.implicit_deps_add( ctx.mam_deps )
+			this.implicit_deps_add( ctx.deps )
 			this.node_visit( ctx, source, source, this.file().text().split( '\n' ) )
 			ctx.npm.aliases_apply()
 

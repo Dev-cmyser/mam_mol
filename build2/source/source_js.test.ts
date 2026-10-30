@@ -3,7 +3,7 @@ namespace $ {
 
 		'js refs'() {
 			$mol_assert_like(
-				mam_source_js_ref_tokens( '[$'+'foo_bar]' ),
+				ref_tokens( '[$'+'foo_bar]' ),
 				[
 					{ 0: '[' },
 					{
@@ -22,7 +22,7 @@ namespace $ {
 
 		'js refs with digits'() {
 			$mol_assert_like(
-				mam_source_js_ref_tokens( '$'+'hyoo_mol_ttt4_a' ),
+				ref_tokens( '$'+'hyoo_mol_ttt4_a' ),
 				[
 					{
 						0: '$'+'hyoo_mol_ttt4_a',
@@ -39,7 +39,7 @@ namespace $ {
 
 		'js string refs ignored'() {
 			$mol_assert_like(
-				mam_source_js_ref_tokens( '["$'+'foo_bar"]' ),
+				ref_tokens( '["$'+'foo_bar"]' ),
 				[
 					{ 0: '[' },
 					{
@@ -58,7 +58,7 @@ namespace $ {
 
 		'js require refs'() {
 			$mol_assert_like(
-				mam_source_js_ref_tokens( 'require( "path/to.file" )' ),
+				ref_tokens( 'require( "path/to.file" )' ),
 				[
 					{
 						0: 'require( "path/to.file" )',
@@ -75,7 +75,7 @@ namespace $ {
 
 		'js import refs'() {
 			$mol_assert_like(
-				mam_source_js_ref_tokens( 'imp' + 'ort foo from "path/to.file"\nimp' + 'ort( "lazy/file" )' ),
+				ref_tokens( 'imp' + 'ort foo from "path/to.file"\nimp' + 'ort( "lazy/file" )' ),
 				[
 					{
 						0: 'import foo from "path/to.file"',
@@ -102,7 +102,7 @@ namespace $ {
 
 		'js import inside word ignored'() {
 			$mol_assert_like(
-				mam_source_js_ref_tokens( 'important = "path/to.file"' ),
+				ref_tokens( 'important = "path/to.file"' ),
 				[
 					{ 0: 'important = ' },
 					{
@@ -120,7 +120,7 @@ namespace $ {
 
 		'js remarks'() {
 			$mol_assert_like(
-				mam_source_js_remark_tokens( 'foo//bar\n/*baz*/lol' ),
+				remark_tokens( 'foo//bar\n/*baz*/lol' ),
 				[
 					{ 0: 'foo' },
 					{ 0: '//bar\n', inline: '//bar\n', block: '' },
@@ -132,7 +132,7 @@ namespace $ {
 
 	})
 
-	function mam_source_js_ref_tokens( source: string ) {
+	function ref_tokens( source: string ) {
 		return [ ... source.matchAll( $mol_build2_source_js.refs ) ].map( token => {
 			if( !token.groups ) return { 0: token[0] }
 			return {
@@ -147,7 +147,7 @@ namespace $ {
 		} )
 	}
 
-	function mam_source_js_remark_tokens( source: string ) {
+	function remark_tokens( source: string ) {
 		return [ ... source.matchAll( $mol_build2_source_js.remarks ) ].map( token => {
 			if( !token.groups ) return { 0: token[0] }
 			return {

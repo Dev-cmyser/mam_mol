@@ -3,7 +3,7 @@ namespace $ {
 
 		'css attr and class refs'() {
 			$mol_assert_like(
-				mam_source_css_ref_tokens( '[--foo_bar][mol_view_error]' ),
+				ref_tokens( '[--foo_bar][mol_view_error]' ),
 				[
 					{ 0: '[' },
 					{ 0: '--foo_bar', attr: '--foo_bar', fqn: '', name: 'foo_bar' },
@@ -16,7 +16,7 @@ namespace $ {
 
 		'css fqn refs'() {
 			$mol_assert_like(
-				mam_source_css_ref_tokens( '$'+'foo.bar $'+'foo_bar' ),
+				ref_tokens( '$'+'foo.bar $'+'foo_bar' ),
 				[
 					{ 0: '$'+'foo.bar', attr: '', fqn: '$'+'foo.bar', name: 'foo.bar' },
 					{ 0: ' ' },
@@ -27,7 +27,7 @@ namespace $ {
 
 		'css short names ignored'() {
 			$mol_assert_like(
-				mam_source_css_ref_tokens( '--foo [bar] $'+'baz foo_bar $'+'foo_bar' ),
+				ref_tokens( '--foo [bar] $'+'baz foo_bar $'+'foo_bar' ),
 				[
 					{ 0: '--foo [bar] $'+'baz foo_bar ' },
 					{ 0: '$'+'foo_bar', attr: '', fqn: '$'+'foo_bar', name: 'foo_bar' },
@@ -37,7 +37,7 @@ namespace $ {
 
 		'css remarks'() {
 			$mol_assert_like(
-				mam_source_css_remark_tokens( 'foo//bar\n/*baz*/lol' ),
+				remark_tokens( 'foo//bar\n/*baz*/lol' ),
 				[
 					{ 0: 'foo' },
 					{ 0: '//bar\n', inline: '//bar\n', block: '' },
@@ -49,7 +49,7 @@ namespace $ {
 
 	})
 
-	function mam_source_css_ref_tokens( source: string ) {
+	function ref_tokens( source: string ) {
 		return [ ... source.matchAll( $mol_build2_source_css.refs ) ].map( token => {
 			if( !token.groups ) return { 0: token[0] }
 			return {
@@ -61,7 +61,7 @@ namespace $ {
 		} )
 	}
 
-	function mam_source_css_remark_tokens( source: string ) {
+	function remark_tokens( source: string ) {
 		return [ ... source.matchAll( $mol_build2_source_css.remarks ) ].map( token => {
 			if( !token.groups ) return { 0: token[0] }
 			return {

@@ -92,7 +92,7 @@ namespace $ {
 				chunk = this.build( this.entry_all() )
 			}
 
-			const target = this.source().parent().resolve( `-mam/${ slice.prefix() }.js` )
+			const target = this.source().parent().resolve( `-npm/${ slice.prefix() }.js` )
 
 			target.text( [
 				'var $node = $node || {}',

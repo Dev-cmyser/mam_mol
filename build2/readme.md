@@ -1,8 +1,8 @@
-# MAM builder
+# $mol_build2
 
 ## Hierarhy
 
-![](_mam.drawio.svg)
+![](_build2.drawio.svg)
 
 ## Test project
 

@@ -7,7 +7,7 @@ class $mol_build2_server_client {
 
 	static run() {
 		const origin = document.location.origin.replace( /^http/, 'ws' )
-		const socket = new WebSocket( origin + document.location.pathname, 'mam_reload' )
+		const socket = new WebSocket( origin + document.location.pathname, 'mol_build2_reload' )
 
 		socket.onclose = ()=> {
 			if( this.reloading ) return

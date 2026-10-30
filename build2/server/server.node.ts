@@ -2,10 +2,10 @@ namespace $ {
 
 	export class $mol_build2_server extends $mol_rest_resource {
 
-		_protocols = [ 'mam_reload' ]
+		_protocols = [ 'mol_build2_reload' ]
 
 		@ $mol_mem
-		mam_root() {
+		builder() {
 			return new this.$.$mol_build2_root
 		}
 
@@ -33,13 +33,13 @@ namespace $ {
 		@ $mol_mem_key
 		pack( path: string ) {
 			const dir = this.file( path.replace( /\/-\/.*$/, '' ) )
-			return this.mam_root().pack( dir )
+			return this.builder().pack( dir )
 		}
 
 		@ $mol_mem_key
 		protected ensure( path: string ) {
 			$mol_wire_solid()
-			this.mam_root().ensure().ensure( this.file( path ).path() )
+			this.builder().ensure().ensure( this.file( path ).path() )
 		}
 
 		protected ensure_needed( path: string ) {
@@ -47,7 +47,7 @@ namespace $ {
 		}
 
 		file( path: string ) {
-			const root = this.mam_root().dir()
+			const root = this.builder().dir()
 			const file = root.resolve( decodeURIComponent( path ).replace( /^\/+/, '' ) )
 			const relative = file.relate( root )
 			if( relative === '..' || relative.startsWith( '../' ) ) $mol_fail( new Error( 'Path is out of root' ) )
@@ -98,7 +98,7 @@ namespace $ {
 		}
 
 		devtools_workspace() {
-			const root = this.mam_root().dir()
+			const root = this.builder().dir()
 			const file = root.resolve( '.well-known/appspecific/com.chrome.devtools.json' )
 			if( file.exists() ) return file
 
@@ -209,7 +209,7 @@ namespace $ {
 		}
 
 		bundle_artifacts< Bundle extends typeof $mol_build2_bundle >( Bundle: Bundle, slice: $mol_build2_slice ) {
-			const bundle = this.mam_root().bundle( Bundle )
+			const bundle = this.builder().bundle( Bundle )
 			return bundle.artifacts( slice ) as $mol_file[]
 		}
 
@@ -218,7 +218,7 @@ namespace $ {
 				return this.redirect( msg, `${ msg.uri().pathname.replace( /\/?$/, '/' ) }-/test.html${ msg.uri().search }` )
 			}
 
-			const root = this.mam_root().dir()
+			const root = this.builder().dir()
 			const files = [
 				{ name: '..', type: 'dir' },
 				{ name: '-', type: 'dir' },
