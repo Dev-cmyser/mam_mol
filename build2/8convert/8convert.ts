@@ -7,14 +7,12 @@ namespace $ {
 			return false
 		}
 
-		@ $mol_mem
-		root() {
-			return undefined as any as $mol_build2_2root
+		root(): $mol_build2_2root {
+			return $mol_fail( new Error( 'root is not set' ) )
 		}
 
-		@ $mol_mem
-		source() {
-			return undefined as any as $mol_file
+		source(): $mol_file {
+			return $mol_fail( new Error( 'source is not set' ) )
 		}
 
 		@ $mol_mem

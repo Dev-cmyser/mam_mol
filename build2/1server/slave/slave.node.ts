@@ -6,9 +6,8 @@ namespace $ {
 
 	export class $mol_build2_1server_slave extends $mol_object2 {
 
-		@ $mol_mem
-		host() {
-			return undefined as any as $mol_build2_1server_slave_host
+		host(): $mol_build2_1server_slave_host {
+			return $mol_fail( new Error( 'host is not set' ) )
 		}
 
 		@ $mol_mem

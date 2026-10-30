@@ -3,9 +3,8 @@ namespace $ {
 	/** Collects sources by dependencies. */
 	export class $mol_build2_5slice extends $mol_object2 {
 
-		@ $mol_mem
-		pack() {
-			return undefined as any as $mol_build2_4package
+		pack(): $mol_build2_4package {
+			return $mol_fail( new Error( 'pack is not set' ) )
 		}
 
 		root() {

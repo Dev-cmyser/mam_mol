@@ -3,9 +3,8 @@ namespace $ {
 	/** Makes one bundle from all required sources. */
 	export class $mol_build2_6bundle extends $mol_object2 {
 		
-		@ $mol_mem
-		root() {
-			return undefined as any as $mol_build2_2root
+		root(): $mol_build2_2root {
+			return $mol_fail( new Error( 'root is not set' ) )
 		}
 		
 		/** Artifacts shared by all slices of pack */

@@ -3,14 +3,12 @@ namespace $ {
 	/** Building MAM package */
 	export class $mol_build2_4package extends $mol_object2 {
 
-		@ $mol_mem
-		root() {
-			return undefined as any as $mol_build2_2root
+		root(): $mol_build2_2root {
+			return $mol_fail( new Error( 'root is not set' ) )
 		}
 
-		@ $mol_mem
-		dir() {
-			return undefined as any as $mol_file
+		dir(): $mol_file {
+			return $mol_fail( new Error( 'dir is not set' ) )
 		}
 
 		@ $mol_mem

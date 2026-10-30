@@ -2,9 +2,8 @@ namespace $ {
 
 	export class $mol_build2_3ensure_npm extends $mol_object2 implements $mol_build2_3ensure_plugin {
 
-		@ $mol_mem
-		root() {
-			return undefined as any as $mol_build2_2root
+		root(): $mol_build2_2root {
+			return $mol_fail( new Error( 'root is not set' ) )
 		}
 
 		@ $mol_mem_key
