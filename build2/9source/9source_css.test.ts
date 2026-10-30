@@ -2,7 +2,7 @@ namespace $ {
 	$mol_test({
 
 		'css attr and class refs'() {
-			$mol_assert_like(
+			$mol_assert_equal(
 				ref_tokens( '[--foo_bar][mol_view_error]' ),
 				[
 					{ 0: '[' },
@@ -15,7 +15,7 @@ namespace $ {
 		},
 
 		'css fqn refs'() {
-			$mol_assert_like(
+			$mol_assert_equal(
 				ref_tokens( '$'+'foo.bar $'+'foo_bar' ),
 				[
 					{ 0: '$'+'foo.bar', attr: '', fqn: '$'+'foo.bar', name: 'foo.bar' },
@@ -26,7 +26,7 @@ namespace $ {
 		},
 
 		'css short names ignored'() {
-			$mol_assert_like(
+			$mol_assert_equal(
 				ref_tokens( '--foo [bar] $'+'baz foo_bar $'+'foo_bar' ),
 				[
 					{ 0: '--foo [bar] $'+'baz foo_bar ' },
@@ -36,7 +36,7 @@ namespace $ {
 		},
 
 		'css remarks'() {
-			$mol_assert_like(
+			$mol_assert_equal(
 				remark_tokens( 'foo//bar\n/*baz*/lol' ),
 				[
 					{ 0: 'foo' },

@@ -2,7 +2,7 @@ namespace $ {
 	$mol_test({
 
 		'js refs'() {
-			$mol_assert_like(
+			$mol_assert_equal(
 				ref_tokens( '[$'+'foo_bar]' ),
 				[
 					{ 0: '[' },
@@ -21,7 +21,7 @@ namespace $ {
 		},
 
 		'js refs with digits'() {
-			$mol_assert_like(
+			$mol_assert_equal(
 				ref_tokens( '$'+'hyoo_mol_ttt4_a' ),
 				[
 					{
@@ -38,7 +38,7 @@ namespace $ {
 		},
 
 		'js string refs ignored'() {
-			$mol_assert_like(
+			$mol_assert_equal(
 				ref_tokens( '["$'+'foo_bar"]' ),
 				[
 					{ 0: '[' },
@@ -57,7 +57,7 @@ namespace $ {
 		},
 
 		'js require refs'() {
-			$mol_assert_like(
+			$mol_assert_equal(
 				ref_tokens( 'require( "path/to.file" )' ),
 				[
 					{
@@ -74,7 +74,7 @@ namespace $ {
 		},
 
 		'js import refs'() {
-			$mol_assert_like(
+			$mol_assert_equal(
 				ref_tokens( 'imp' + 'ort foo from "path/to.file"\nimp' + 'ort( "lazy/file" )' ),
 				[
 					{
@@ -101,7 +101,7 @@ namespace $ {
 		},
 
 		'js import inside word ignored'() {
-			$mol_assert_like(
+			$mol_assert_equal(
 				ref_tokens( 'important = "path/to.file"' ),
 				[
 					{ 0: 'important = ' },
@@ -119,7 +119,7 @@ namespace $ {
 		},
 
 		'js remarks'() {
-			$mol_assert_like(
+			$mol_assert_equal(
 				remark_tokens( 'foo//bar\n/*baz*/lol' ),
 				[
 					{ 0: 'foo' },
