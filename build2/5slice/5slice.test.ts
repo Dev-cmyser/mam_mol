@@ -1,7 +1,12 @@
 namespace $ {
 
 	function sources( name: string, Slice: typeof $mol_build2_5slice ) {
-		return [ ... $mol_build2_4package_fixture( name ).slice( Slice ).files() ]
+		const root = new $mol_build2_2root
+		const ensure = new $mol_build2_3ensure
+		ensure.ensure = ()=> false
+		root.ensure = $mol_const( ensure )
+		const pack = root.pack( root.dir().resolve( `mol/build2/fixture/${ name }` ) )
+		return [ ... pack.slice( Slice ).files() ]
 			.filter( file => /\/fixture\/.*\.ts$/.test( file.path() ) )
 			.map( file => file.name() )
 	}
