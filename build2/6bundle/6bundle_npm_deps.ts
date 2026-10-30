@@ -10,6 +10,17 @@ namespace $ {
 			return null
 		}
 
+		own_deps( slice: $mol_build2_5slice, dir: $mol_file ) {
+			const deps = new Set< string >()
+			const prefix = dir.path() + '/'
+			for( const file of slice.files() ) {
+				if( !file.path().startsWith( prefix ) ) continue
+				const npm = this.root().source([ this.$.$mol_build2_9source_ts, file ])?.ts_source_deps().npm
+				npm?.deps.forEach( dep => deps.add( dep ) )
+			}
+			return deps
+		}
+
 		version( dep: string ) {
 			const json = this.root().dir().resolve( `node_modules/${ dep }/package.json` )
 			if( !json.exists() ) return '*'
@@ -24,8 +35,8 @@ namespace $ {
 			if( !dir ) return []
 
 			const deps = new Set([
-				... pack.slice( this.$.$mol_build2_5slice_web_prod ).node_deps(),
-				... pack.slice( this.$.$mol_build2_5slice_node_prod ).node_deps(),
+				... this.own_deps( pack.slice( this.$.$mol_build2_5slice_web_prod ), dir ),
+				... this.own_deps( pack.slice( this.$.$mol_build2_5slice_node_prod ), dir ),
 			])
 			if( !deps.size ) return []
 
